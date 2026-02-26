@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>⚡ Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: #020617;
+    color: #e2e8f0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+  }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+  button { font-family: inherit; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+
+// ── CALENDAR DATA ──────────────────────────────────────────────────────────
+const WEEK_EVENTS = [
+  {
+    date: "Wed Feb 25", day: "TODAY",
+    events: [
+      { time: "10:00 AM", title: "BA Working Group", loc: "Room 1A674 (Work)", type: "work" },
+      { time: "7:30 PM",  title: "Aviation Committee Meeting", loc: "Zoom / Google Meet", type: "meeting", note: "Neicko, Cocoa + chapter members" },
+    ],
+  },
+  {
+    date: "Thu Feb 26", day: "THU",
+    events: [
+      { time: "All Day", title: "⚠️ Notion Renews Tomorrow", loc: "Cancel or buy yearly plan?", type: "alert" },
+      { time: "10:30 PM", title: "Take BP", loc: "Home", type: "health" },
+    ],
+  },
+  {
+    date: "Fri Feb 27", day: "FRI",
+    events: [
+      { time: "All Day",  title: "💰 FED PAYDAY",                       loc: "",                          type: "finance"  },
+      { time: "All Day",  title: "🎂 Jazzy J Birthday",                  loc: "",                          type: "birthday" },
+      { time: "9:00 AM",  title: "Send STEM Aviation Reminder Email",    loc: "AF session this weekend",   type: "task"     },
+      { time: "All Day",  title: "Black Band @ Eddie V's",               loc: "Eddie V's",                 type: "personal" },
+    ],
+  },
+  {
+    date: "Sat Feb 28", day: "SAT",
+    events: [
+      { time: "All Day", title: "🎂 Marcus Hampton's 61st Birthday", loc: "",                  type: "birthday" },
+      { time: "All Day", title: "⚠️ AppleCard Report Due",           loc: "Pay balance!",      type: "alert"    },
+      { time: "All Day", title: "Black Band @ Eddie V's",            loc: "Eddie V's",         type: "personal" },
+    ],
+  },
+  {
+    date: "Sun Mar 1", day: "SUN",
+    events: [
+      { time: "11:00 AM", title: "Plan Rehoboth Beach – Juneteenth", loc: "Recurring planning session",       type: "personal" },
+      { time: "2:00 PM",  title: "Note to Sylvester (Chilo)",        loc: "Backyard water line reminder",     type: "task"     },
+      { time: "6:00 PM",  title: "Adjust Outside Lights",            loc: "Home",                             type: "home"     },
+      { time: "10:30 PM", title: "Take BP",                          loc: "Home",                             type: "health"   },
+    ],
+  },
+  {
+    date: "Mon Mar 2", day: "MON",
+    events: [
+      { time: "All Day", title: "🎂 Tanya Patterson's Birthday", loc: "", type: "birthday" },
+    ],
+  },
+  {
+    date: "Tue Mar 3", day: "TUE",
+    events: [
+      { time: "All Day", title: "✈️ Depart for Miami",              loc: "Virgin Cruise – Key West & Bahamas", type: "travel" },
+      { time: "All Day", title: "🏨 Check In: DUA Miami",           loc: "1300 S Miami Ave · Res# 90311477",   type: "travel" },
+    ],
+  },
+];
+
+const HORIZON = [
+  { date: "Mar 3–8",  title: "Virgin Cruise – Key West & Bahamas",       detail: "With the AF fellas. Leave Miami Wed, return Sun.",      type: "travel"   },
+  { date: "Mar 3–4",  title: "Stay: DUA Miami, Autograph Collection",     detail: "Marriott · Res# 90311477",                              type: "travel"   },
+  { date: "TBD",      title: "Portugal Couples Trip Planning",             detail: "Chapter 6-0 · Sep/Oct 2026 · Schedule Zoom w/ Karen",   type: "travel"   },
+  { date: "Recurring",title: "Rehoboth Beach – Juneteenth Weekend",        detail: "Planning session every Sun through March",              type: "personal" },
+];
+
+const FOLLOWUPS = [
+  { id:1, text:"Cancel or buy annual Notion plan — renews Feb 26",               urgency:"HIGH", done:false },
+  { id:2, text:"Pay AppleCard balance — report due Feb 28",                       urgency:"HIGH", done:false },
+  { id:3, text:"Send STEM Aviation reminder email by Fri Feb 27, 9 AM",          urgency:"HIGH", done:false },
+  { id:4, text:"Message Sylvester (Chilo) re: backyard water line – Sun Mar 1",  urgency:"MED",  done:false },
+  { id:5, text:"Schedule Portugal trip Zoom call with Karen and travelers",       urgency:"MED",  done:false },
+  { id:6, text:"Confirm AF cruise details (packing, meetup) — departs Mar 3",    urgency:"MED",  done:false },
+];
+
+const IPOS = [
+  { name:"Databricks", sector:"AI / Data",       window:"H2 2026",    val:"$134B", verdict:"BUY",   take:"Best risk/reward of the class. 65% YoY growth, $5.4B ARR, AI-native, cash-flow positive. A 'when not if' listing deeply embedded in enterprise workflows." },
+  { name:"Cerebras",   sector:"AI Chips",         window:"Q2 2026",    val:"$10B",  verdict:"BUY",   take:"Soonest opportunity. NVIDIA alternative with novel chip architecture. High risk/reward — speculative bet on AI infrastructure diversity." },
+  { name:"Canva",      sector:"Design SaaS",       window:"2026–2027",  val:"$42–50B",verdict:"BUY",  take:"Profitable, 240M users, pivoting to enterprise. Direct AI competition with Adobe. Strong fundamentals without the pure-AI hype premium." },
+  { name:"SpaceX",     sector:"Aerospace / AI",    window:"Mid 2026",   val:"$800B+", verdict:"WATCH",take:"Iconic company but entering at 62–68x sales is steep. Starlink is the real business. Wait for post-IPO price discovery before committing capital." },
+  { name:"OpenAI",     sector:"AI / LLMs",         window:"Q4 2026–27", val:"$830B+", verdict:"WATCH",take:"Dominant brand but complex structure and massive cloud costs. Needs to demonstrate profitability. Monitor the S-1 closely before deciding." },
+  { name:"Stripe",     sector:"Fintech",           window:"Late 2026",  val:"$120B+", verdict:"WATCH",take:"'Not in a rush' is their stance. Profitable and best-in-class but may not list in 2026. Excellent long-term hold if priced fairly." },
+  { name:"Discord",    sector:"Social / Comms",    window:"2026–2027",  val:"$20–30B",verdict:"AVOID",take:"Monetization has consistently lagged user growth. 200M MAUs but limited revenue per user. Wait until they prove the business model post-IPO." },
+  { name:"Kraken",     sector:"Crypto Exchange",   window:"2026",       val:"$15B+",  verdict:"WATCH",take:"Crypto is hot again but exchange valuations are cyclical. Only if you have crypto tolerance — not a core portfolio play." },
+];
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
+const TYPE_COLOR = {
+  work:"#6366f1", meeting:"#8b5cf6", alert:"#ef4444", health:"#10b981",
+  finance:"#10b981", birthday:"#f59e0b", task:"#3b82f6", personal:"#ec4899",
+  travel:"#0ea5e9", home:"#84cc16",
+};
+const VERDICT_STYLE = {
+  BUY:  { bg:"rgba(16,185,129,0.15)",  color:"#10b981", border:"rgba(16,185,129,0.3)"  },
+  WATCH:{ bg:"rgba(245,158,11,0.15)", color:"#f59e0b", border:"rgba(245,158,11,0.3)"  },
+  AVOID:{ bg:"rgba(239,68,68,0.12)",  color:"#ef4444", border:"rgba(239,68,68,0.3)"   },
+};
+const URGENCY_COLOR = { HIGH:"#ef4444", MED:"#f59e0b", LOW:"#10b981" };
+
+function wmoIcon(code) {
+  const n = parseInt(code);
+  if (n <= 113) return "☀️";
+  if (n <= 116) return "⛅";
+  if (n <= 119) return "☁️";
+  if (n <= 143) return "🌫️";
+  if (n <= 260) return "🌦️";
+  if (n <= 296) return "🌧️";
+  if (n <= 330) return "❄️";
+  return "🌩️";
+}
+
+// ── CARD ───────────────────────────────────────────────────────────────────
+function Card({ title, icon, accent="#f59e0b", children, scroll=false, maxH=400 }) {
+  return (
+    <div style={{
+      background:"rgba(15,23,42,0.85)", border:"1px solid rgba(255,255,255,0.07)",
+      borderRadius:16, padding:"18px 20px", backdropFilter:"blur(20px)",
+      display:"flex", flexDirection:"column",
+    }}>
+      <div style={{
+        display:"flex", alignItems:"center", gap:8,
+        paddingBottom:12, marginBottom:14,
+        borderBottom:"1px solid rgba(255,255,255,0.06)",
+      }}>
+        <div style={{
+          width:30, height:30, borderRadius:8, flexShrink:0,
+          background:`${accent}20`, border:`1px solid ${accent}40`,
+          display:"flex", alignItems:"center", justifyContent:"center", fontSize:15,
+        }}>{icon}</div>
+        <span style={{ fontSize:13, fontWeight:700, color:"#e2e8f0", letterSpacing:0.3, fontFamily:"'IBM Plex Mono',monospace" }}>{title}</span>
+      </div>
+      <div style={scroll ? { overflowY:"auto", maxHeight:maxH, paddingRight:4 } : {}}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ── WEATHER ────────────────────────────────────────────────────────────────
+function Weather() {
+  const [w, setW] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("https://wttr.in/Alexandria,VA?format=j1")
+      .then(r => r.json())
+      .then(d => setW(d))
+      .catch(() => setW(null))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div style={{ color:"#475569", fontSize:12 }}>Loading weather…</div>;
+  if (!w) return <div style={{ color:"#475569", fontSize:12 }}>📍 Alexandria, VA — weather unavailable</div>;
+
+  const cur  = w.current_condition?.[0];
+  const days = w.weather?.slice(0,5) || [];
+  const dayLabel = s => new Date(s).toLocaleDateString("en-US",{weekday:"short"});
+
+  return (
+    <div>
+      <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:14 }}>
+        <span style={{ fontSize:40 }}>{wmoIcon(cur?.weatherCode)}</span>
+        <div>
+          <div style={{ fontSize:30, fontWeight:700, color:"#f1f5f9", lineHeight:1, fontFamily:"'IBM Plex Mono',monospace" }}>{cur?.temp_F}°F</div>
+          <div style={{ fontSize:12, color:"#94a3b8", marginTop:3 }}>{cur?.weatherDesc?.[0]?.value} · Feels {cur?.FeelsLikeF}°F</div>
+          <div style={{ fontSize:11, color:"#f59e0b", marginTop:2 }}>📍 Alexandria, VA</div>
+        </div>
+      </div>
+      <div style={{ display:"flex", gap:6 }}>
+        {days.map((d,i) => (
+          <div key={i} style={{
+            flex:1, background:"rgba(255,255,255,0.04)", borderRadius:8,
+            padding:"7px 4px", textAlign:"center", border:"1px solid rgba(255,255,255,0.06)",
+          }}>
+            <div style={{ fontSize:9, color:"#64748b", marginBottom:2, fontWeight:700 }}>{i===0?"NOW":dayLabel(d.date)}</div>
+            <div style={{ fontSize:18 }}>{wmoIcon(d.hourly?.[4]?.weatherCode)}</div>
+            <div style={{ fontSize:12, color:"#f1f5f9", fontWeight:600 }}>{d.maxtempF}°</div>
+            <div style={{ fontSize:10, color:"#64748b" }}>{d.mintempF}°</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── NEWS FEED ──────────────────────────────────────────────────────────────
+function NewsFeed({ prompt, emptyLabel }) {
+  const [news,    setNews]    = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loaded,  setLoaded]  = useState(false);
+  const [error,   setError]   = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+          model:"claude-sonnet-4-20250514",
+          max_tokens:1000,
+          tools:[{ type:"web_search_20250305", name:"web_search" }],
+          messages:[{ role:"user", content: prompt }],
+        }),
+      });
+      const data = await res.json();
+      const text = (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
+      const match = text.match(/\[[\s\S]*\]/);
+      const parsed = match ? JSON.parse(match[0]) : [];
+      setNews(Array.isArray(parsed) ? parsed.slice(0,5) : []);
+      setLoaded(true);
+    } catch(e) {
+      setError("Unable to fetch — check your connection.");
+    } finally {
+      setLoading(false);
+    }
+  }, [prompt]);
+
+  return (
+    <div>
+      <div style={{ textAlign:"right", marginBottom:12 }}>
+        <button onClick={load} disabled={loading} style={{
+          background: loading ? "rgba(245,158,11,0.08)" : "rgba(245,158,11,0.15)",
+          border:"1px solid rgba(245,158,11,0.3)", color:"#f59e0b",
+          borderRadius:7, padding:"5px 14px", fontSize:11,
+          cursor: loading ? "not-allowed" : "pointer",
+          fontFamily:"'IBM Plex Mono',monospace",
+        }}>
+          {loading ? "Loading…" : loaded ? "↻ Refresh" : "Load News"}
+        </button>
+      </div>
+
+      {error && <div style={{ color:"#ef4444", fontSize:12 }}>{error}</div>}
+
+      {!loaded && !loading && (
+        <div style={{ color:"#334155", fontSize:12, textAlign:"center", padding:"24px 0" }}>
+          {emptyLabel}
+        </div>
+      )}
+
+      {news.map((item,i) => (
+        <div key={i} style={{
+          borderBottom:"1px solid rgba(255,255,255,0.05)",
+          paddingBottom:10, marginBottom:10,
+        }}>
+          <div style={{ fontSize:13, color:"#e2e8f0", fontWeight:600, lineHeight:1.4, marginBottom:4 }}>{item.title}</div>
+          <div style={{ fontSize:11, color:"#64748b", lineHeight:1.6 }}>{item.summary}</div>
+          {item.source && <div style={{ fontSize:10, color:"#f59e0b", marginTop:3 }}>— {item.source}</div>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── FOLLOW-UPS ─────────────────────────────────────────────────────────────
+function FollowUps() {
+  const [items, setItems] = useState(FOLLOWUPS);
+  const toggle = id => setItems(p => p.map(f => f.id===id ? {...f, done:!f.done} : f));
+
+  return (
+    <div>
+      <div style={{ fontSize:10, color:"#334155", marginBottom:10, fontFamily:"'IBM Plex Mono',monospace" }}>
+        TAP ANY ITEM TO MARK COMPLETE
+      </div>
+      {items.map(f => (
+        <div key={f.id} onClick={() => toggle(f.id)} style={{
+          display:"flex", alignItems:"flex-start", gap:10,
+          padding:"8px 0", borderBottom:"1px solid rgba(255,255,255,0.05)",
+          cursor:"pointer", opacity: f.done ? 0.35 : 1, transition:"opacity 0.2s",
+        }}>
+          <div style={{
+            width:17, height:17, borderRadius:4, flexShrink:0, marginTop:1,
+            border:`2px solid ${f.done ? "#10b981" : "#334155"}`,
+            background: f.done ? "#10b981" : "transparent",
+            display:"flex", alignItems:"center", justifyContent:"center",
+          }}>
+            {f.done && <span style={{ color:"#fff", fontSize:10, lineHeight:1 }}>✓</span>}
+          </div>
+          <div style={{ flex:1, fontSize:12, color:"#e2e8f0", lineHeight:1.5, textDecoration: f.done ? "line-through" : "none" }}>
+            {f.text}
+          </div>
+          <div style={{
+            fontSize:9, fontWeight:700, flexShrink:0, borderRadius:4, padding:"2px 6px",
+            color: URGENCY_COLOR[f.urgency],
+            background: `${URGENCY_COLOR[f.urgency]}18`,
+            border: `1px solid ${URGENCY_COLOR[f.urgency]}35`,
+            fontFamily:"'IBM Plex Mono',monospace",
+          }}>{f.urgency}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── CALENDAR WEEK ─────────────────────────────────────────────────────────
+function CalWeek() {
+  return (
+    <div>
+      {WEEK_EVENTS.map((day,i) => (
+        <div key={i} style={{ marginBottom:16 }}>
+          <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:6 }}>
+            <span style={{
+              fontSize:10, fontWeight:800, letterSpacing:1,
+              color: day.day==="TODAY" ? "#f59e0b" : "#475569",
+              fontFamily:"'IBM Plex Mono',monospace",
+            }}>{day.day}</span>
+            <span style={{ fontSize:11, color:"#334155" }}>{day.date}</span>
+          </div>
+          {day.events.map((ev,j) => (
+            <div key={j} style={{
+              display:"flex", alignItems:"flex-start", gap:8,
+              padding:"7px 10px", borderRadius:8, marginBottom:4,
+              background:"rgba(255,255,255,0.025)",
+              borderLeft:`3px solid ${TYPE_COLOR[ev.type]||"#334155"}`,
+            }}>
+              <div style={{ fontSize:10, color:"#475569", minWidth:56, paddingTop:1, fontFamily:"'IBM Plex Mono',monospace" }}>{ev.time}</div>
+              <div>
+                <div style={{ fontSize:12, color:"#e2e8f0", fontWeight:500, lineHeight:1.4 }}>{ev.title}</div>
+                {ev.loc  && <div style={{ fontSize:11, color:"#64748b", marginTop:2 }}>{ev.loc}</div>}
+                {ev.note && <div style={{ fontSize:10, color:"#8b5cf6", marginTop:2 }}>👥 {ev.note}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── CALENDAR HORIZON ──────────────────────────────────────────────────────
+function CalHorizon() {
+  return (
+    <div>
+      <div style={{ fontSize:10, color:"#475569", marginBottom:14, letterSpacing:1, fontWeight:700, fontFamily:"'IBM Plex Mono',monospace" }}>
+        KEY EVENTS ON THE HORIZON
+      </div>
+      {HORIZON.map((ev,i) => (
+        <div key={i} style={{
+          padding:"10px 14px", borderRadius:10, marginBottom:10,
+          background:"rgba(255,255,255,0.03)",
+          borderLeft:`3px solid ${TYPE_COLOR[ev.type]||"#334155"}`,
+        }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8 }}>
+            <div style={{ fontSize:13, color:"#e2e8f0", fontWeight:600 }}>{ev.title}</div>
+            <div style={{ fontSize:10, color:"#f59e0b", fontWeight:700, flexShrink:0, fontFamily:"'IBM Plex Mono',monospace" }}>{ev.date}</div>
+          </div>
+          <div style={{ fontSize:11, color:"#64748b", marginTop:4 }}>{ev.detail}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── IPO TABLE ─────────────────────────────────────────────────────────────
+function IPOTable() {
+  const [open, setOpen] = useState(null);
+
+  return (
+    <div>
+      <div style={{ display:"flex", gap:16, marginBottom:14 }}>
+        {Object.entries(VERDICT_STYLE).map(([v,s]) => (
+          <div key={v} style={{ display:"flex", alignItems:"center", gap:5 }}>
+            <div style={{ width:8, height:8, borderRadius:2, background:s.color }} />
+            <span style={{ fontSize:10, color:"#64748b" }}>{v}</span>
+          </div>
+        ))}
+        <span style={{ fontSize:10, color:"#334155", marginLeft:4 }}>· Tap row for my take</span>
+      </div>
+
+      {IPOS.map((ipo,i) => {
+        const vs  = VERDICT_STYLE[ipo.verdict];
+        const isOpen = open === i;
+        return (
+          <div key={i} onClick={() => setOpen(isOpen?null:i)} style={{
+            borderBottom:"1px solid rgba(255,255,255,0.05)",
+            padding:"10px 0", cursor:"pointer",
+          }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+              <div style={{
+                padding:"2px 8px", borderRadius:5, fontSize:10, fontWeight:700,
+                background:vs.bg, color:vs.color, border:`1px solid ${vs.border}`,
+                minWidth:44, textAlign:"center", fontFamily:"'IBM Plex Mono',monospace",
+              }}>{ipo.verdict}</div>
+              <div style={{ flex:1 }}>
+                <div style={{ display:"flex", justifyContent:"space-between" }}>
+                  <span style={{ fontSize:13, color:"#e2e8f0", fontWeight:600 }}>{ipo.name}</span>
+                  <span style={{ fontSize:11, color:"#64748b", fontFamily:"'IBM Plex Mono',monospace" }}>{ipo.window}</span>
+                </div>
+                <div style={{ display:"flex", justifyContent:"space-between", marginTop:2 }}>
+                  <span style={{ fontSize:11, color:"#94a3b8" }}>{ipo.sector}</span>
+                  <span style={{ fontSize:11, color:"#f59e0b", fontFamily:"'IBM Plex Mono',monospace" }}>{ipo.val}</span>
+                </div>
+              </div>
+              <span style={{ color:"#334155", fontSize:11 }}>{isOpen?"▲":"▼"}</span>
+            </div>
+            {isOpen && (
+              <div style={{
+                marginTop:8, padding:"9px 12px",
+                background:"rgba(255,255,255,0.03)", borderRadius:8,
+                fontSize:12, color:"#94a3b8", lineHeight:1.7,
+                borderLeft:`2px solid ${vs.color}`,
+              }}>
+                💬 {ipo.take}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      <div style={{ marginTop:14, padding:"9px 12px", background:"rgba(245,158,11,0.05)", borderRadius:8, border:"1px solid rgba(245,158,11,0.1)" }}>
+        <div style={{ fontSize:10, color:"#475569", lineHeight:1.8 }}>
+          ⚠️ <strong style={{ color:"#f59e0b" }}>Disclaimer:</strong> Not financial advice. IPO timing and valuations shift. Always consult a financial advisor before investing.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN ──────────────────────────────────────────────────────────────────
+function App() {
+  const [now, setNow]     = useState(new Date());
+  const [calTab, setCalTab] = useState("week");
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const timeStr = now.toLocaleTimeString("en-US",{ hour:"2-digit", minute:"2-digit", second:"2-digit" });
+  const dateStr = now.toLocaleDateString("en-US",{ weekday:"long", month:"long", day:"numeric", year:"numeric" });
+
+  const grid = { display:"grid", gap:16 };
+
+  return (
+    <div style={{
+      minHeight:"100vh",
+      background:"linear-gradient(140deg,#020617 0%,#080f1f 50%,#020617 100%)",
+      padding:"20px 16px 48px",
+      backgroundAttachment:"fixed",
+    }}>
+      {/* Grid overlay */}
+      <div style={{
+        position:"fixed", inset:0, pointerEvents:"none", zIndex:0,
+        backgroundImage:"radial-gradient(circle at 1px 1px, rgba(255,255,255,0.018) 1px, transparent 0)",
+        backgroundSize:"30px 30px",
+      }} />
+
+      <div style={{ position:"relative", zIndex:1, maxWidth:1380, margin:"0 auto" }}>
+
+        {/* ── HEADER ── */}
+        <div style={{
+          display:"flex", justifyContent:"space-between", alignItems:"center",
+          padding:"18px 24px", marginBottom:20,
+          background:"rgba(15,23,42,0.8)", borderRadius:16,
+          backdropFilter:"blur(24px)",
+          border:"1px solid rgba(245,158,11,0.15)",
+        }}>
+          <div>
+            <div style={{ fontSize:22, fontWeight:800, color:"#f1f5f9", letterSpacing:-0.5, fontFamily:"'IBM Plex Mono',monospace" }}>
+              ⚡ COMMAND CENTER
+            </div>
+            <div style={{ fontSize:11, color:"#475569", marginTop:3 }}>{dateStr}</div>
+          </div>
+          <div style={{ textAlign:"right" }}>
+            <div style={{ fontSize:26, fontWeight:700, color:"#f59e0b", letterSpacing:2, fontFamily:"'IBM Plex Mono',monospace" }}>{timeStr}</div>
+            <div style={{ fontSize:10, color:"#475569", marginTop:3 }}>📍 ALEXANDRIA, VA</div>
+          </div>
+        </div>
+
+        {/* ── ROW 1: Weather + Calendar ── */}
+        <div style={{ ...grid, gridTemplateColumns:"minmax(260px,300px) 1fr", marginBottom:16 }}>
+          <Card title="WEATHER THIS WEEK" icon="🌤" accent="#38bdf8">
+            <Weather />
+          </Card>
+
+          <Card title="CALENDAR" icon="📅" accent="#8b5cf6" scroll maxH={440}>
+            <div style={{ display:"flex", gap:6, marginBottom:14 }}>
+              {[["week","This Week (Detailed)"],["horizon","2-Week Horizon"]].map(([v,lbl]) => (
+                <button key={v} onClick={() => setCalTab(v)} style={{
+                  padding:"5px 14px", borderRadius:7, fontSize:11,
+                  background: calTab===v ? "rgba(139,92,246,0.2)" : "rgba(255,255,255,0.03)",
+                  border:`1px solid ${calTab===v ? "rgba(139,92,246,0.5)" : "rgba(255,255,255,0.07)"}`,
+                  color: calTab===v ? "#a78bfa" : "#64748b",
+                  cursor:"pointer", fontWeight: calTab===v ? 700 : 400,
+                  fontFamily:"'IBM Plex Mono',monospace",
+                }}>{lbl}</button>
+              ))}
+            </div>
+            {calTab==="week" ? <CalWeek /> : <CalHorizon />}
+          </Card>
+        </div>
+
+        {/* ── ROW 2: Follow-ups + AI News + Travel News ── */}
+        <div style={{ ...grid, gridTemplateColumns:"1fr 1fr 1fr", marginBottom:16 }}>
+          <Card title="FOLLOW-UPS & ACTION ITEMS" icon="✅" accent="#ef4444" scroll maxH={400}>
+            <FollowUps />
+          </Card>
+
+          <Card title="AI NEWS" icon="🤖" accent="#6366f1" scroll maxH={400}>
+            <NewsFeed
+              emptyLabel="Tap Load News to fetch the latest AI headlines"
+              prompt={`Search the web for the top 5 AI news stories from the past 48 hours. Return ONLY a valid JSON array with no other text or markdown, exactly like this: [{"title":"...","summary":"2 sentence summary","source":"publication name"}]. Focus on model releases, industry moves, AI policy, and major research breakthroughs.`}
+            />
+          </Card>
+
+          <Card title="TRAVEL ABROAD" icon="✈️" accent="#0ea5e9" scroll maxH={400}>
+            <NewsFeed
+              emptyLabel="Tap Load News to fetch the latest travel headlines"
+              prompt={`Search the web for the top 5 international travel news stories from the past 7 days — visa changes, destination trends, airline news, travel advisories, new international routes. Return ONLY a valid JSON array with no other text or markdown: [{"title":"...","summary":"2 sentence summary","source":"publication name"}].`}
+            />
+          </Card>
+        </div>
+
+        {/* ── ROW 3: IPO Watchlist ── */}
+        <Card title="IPO WATCHLIST — NEXT 3–6 MONTHS" icon="📈" accent="#10b981" scroll maxH={520}>
+          <IPOTable />
+        </Card>
+
+        <div style={{ textAlign:"center", marginTop:24, fontSize:10, color:"#1e293b", fontFamily:"'IBM Plex Mono',monospace" }}>
+          Built with Claude · {dateStr}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+
+</body>
+</html>
