@@ -2,519 +2,667 @@
 
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>⚡ Command Center</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
-  body { background: #020617; color: #e2e8f0; font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; }
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
-  button { font-family: inherit; }
-  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:#020617;
+  color:#e2e8f0;
+  font-family:'IBM Plex Sans',sans-serif;
+  min-height:100vh;
+  padding:20px 16px 48px;
+  background-image:radial-gradient(circle at 1px 1px,rgba(255,255,255,0.018) 1px,transparent 0);
+  background-size:30px 30px;
+}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#1e293b;border-radius:4px}
+button{font-family:inherit;cursor:pointer}
+a{text-decoration:none}
+
+/* ── LAYOUT ── */
+.wrap{max-width:1380px;margin:0 auto}
+.row1{display:grid;grid-template-columns:300px 1fr;gap:16px;margin-bottom:16px}
+.row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+.row3{margin-bottom:24px}
+@media(max-width:900px){
+.row1,.row2{grid-template-columns:1fr}
+}
+
+/* ── HEADER ── */
+.hdr{
+display:flex;justify-content:space-between;align-items:center;
+padding:18px 24px;margin-bottom:20px;
+background:rgba(15,23,42,0.9);border-radius:16px;
+border:1px solid rgba(245,158,11,0.2);
+}
+.hdr-title{font-size:22px;font-weight:800;color:#f1f5f9;letter-spacing:-0.5px;font-family:‘IBM Plex Mono’,monospace}
+.hdr-date{font-size:11px;color:#475569;margin-top:3px}
+.hdr-time{font-size:26px;font-weight:700;color:#f59e0b;letter-spacing:2px;font-family:‘IBM Plex Mono’,monospace;text-align:right}
+.hdr-loc{font-size:10px;color:#475569;margin-top:3px;text-align:right}
+
+/* ── CARD ── */
+.card{
+background:rgba(15,23,42,0.9);
+border:1px solid rgba(255,255,255,0.07);
+border-radius:16px;padding:18px 20px;
+}
+.card-hdr{
+display:flex;align-items:center;gap:8px;
+padding-bottom:12px;margin-bottom:14px;
+border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.card-icon{
+width:30px;height:30px;border-radius:8px;flex-shrink:0;
+display:flex;align-items:center;justify-content:center;font-size:15px;
+}
+.card-title{font-size:13px;font-weight:700;color:#e2e8f0;letter-spacing:0.3px;font-family:‘IBM Plex Mono’,monospace;flex:1}
+.card-body{overflow-y:auto;max-height:440px;padding-right:2px}
+
+/* ── WEATHER ── */
+.wx-current{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.wx-temp{font-size:30px;font-weight:700;color:#f1f5f9;line-height:1;font-family:‘IBM Plex Mono’,monospace}
+.wx-desc{font-size:12px;color:#94a3b8;margin-top:3px}
+.wx-loc{font-size:11px;color:#f59e0b;margin-top:2px}
+.wx-days{display:flex;gap:6px}
+.wx-day{
+flex:1;background:rgba(255,255,255,0.04);border-radius:8px;
+padding:7px 4px;text-align:center;border:1px solid rgba(255,255,255,0.06);
+}
+.wx-day-label{font-size:9px;color:#64748b;margin-bottom:2px;font-weight:700;font-family:‘IBM Plex Mono’,monospace}
+.wx-day-icon{font-size:18px}
+.wx-day-hi{font-size:12px;color:#f1f5f9;font-weight:600}
+.wx-day-lo{font-size:10px;color:#64748b}
+
+/* ── CALENDAR TABS ── */
+.cal-tabs{display:flex;gap:6px;margin-bottom:14px}
+.cal-tab{
+padding:5px 14px;border-radius:7px;font-size:11px;font-family:‘IBM Plex Mono’,monospace;
+border:1px solid rgba(255,255,255,0.07);color:#64748b;background:rgba(255,255,255,0.03);
+font-weight:400;transition:all 0.2s;
+}
+.cal-tab.active{
+background:rgba(139,92,246,0.2);border-color:rgba(139,92,246,0.5);
+color:#a78bfa;font-weight:700;
+}
+.cal-refresh{
+display:flex;align-items:center;gap:6px;
+background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.3);
+color:#a78bfa;border-radius:7px;padding:4px 10px;font-size:11px;
+font-family:‘IBM Plex Mono’,monospace;font-weight:700;
+}
+.cal-refresh:disabled{opacity:0.5;cursor:not-allowed}
+.spin{display:inline-block}
+.spinning{animation:spin 0.8s linear infinite}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.cal-sync{font-size:9px;color:#334155;font-family:‘IBM Plex Mono’,monospace}
+.cal-syncing{
+text-align:center;padding:10px;margin-bottom:10px;
+background:rgba(139,92,246,0.06);border-radius:8px;
+border:1px solid rgba(139,92,246,0.15);
+font-size:11px;color:#a78bfa;font-family:‘IBM Plex Mono’,monospace;
+}
+
+/* ── DAY BLOCK ── */
+.day-block{margin-bottom:16px}
+.day-label{
+display:flex;align-items:baseline;gap:8px;margin-bottom:6px;
+}
+.day-name{
+font-size:10px;font-weight:800;letter-spacing:1px;
+font-family:‘IBM Plex Mono’,monospace;color:#475569;
+}
+.day-name.today{color:#f59e0b}
+.day-date{font-size:11px;color:#334155}
+.event-row{
+display:flex;align-items:flex-start;gap:8px;
+padding:7px 10px;border-radius:8px;margin-bottom:4px;
+background:rgba(255,255,255,0.025);
+}
+.event-time{font-size:10px;color:#475569;min-width:56px;padding-top:1px;font-family:‘IBM Plex Mono’,monospace;flex-shrink:0}
+.event-title{font-size:12px;color:#e2e8f0;font-weight:500;line-height:1.4}
+.event-loc{font-size:11px;color:#64748b;margin-top:2px}
+.event-note{font-size:10px;color:#8b5cf6;margin-top:2px}
+
+/* ── HORIZON ── */
+.hz-label{font-size:10px;color:#475569;margin-bottom:14px;letter-spacing:1px;font-weight:700;font-family:‘IBM Plex Mono’,monospace}
+.hz-item{padding:10px 14px;border-radius:10px;margin-bottom:10px;background:rgba(255,255,255,0.03)}
+.hz-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.hz-title{font-size:13px;color:#e2e8f0;font-weight:600}
+.hz-date{font-size:10px;color:#f59e0b;font-weight:700;flex-shrink:0;font-family:‘IBM Plex Mono’,monospace}
+.hz-detail{font-size:11px;color:#64748b;margin-top:4px}
+
+/* ── FOLLOW-UPS ── */
+.fu-legend{display:flex;gap:14px;align-items:center;margin-bottom:12px}
+.fu-leg-item{display:flex;align-items:center;gap:4px;font-size:9px;color:#475569;font-family:‘IBM Plex Mono’,monospace}
+.fu-row{
+display:flex;align-items:flex-start;gap:8px;
+padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);
+cursor:pointer;transition:opacity 0.2s;
+}
+.fu-row.done{opacity:0.35}
+.fu-check{
+width:17px;height:17px;border-radius:4px;flex-shrink:0;margin-top:2px;
+border:2px solid #334155;background:transparent;
+display:flex;align-items:center;justify-content:center;transition:all 0.2s;
+}
+.fu-check.checked{border-color:#10b981;background:#10b981}
+.fu-check-mark{color:#fff;font-size:10px;line-height:1}
+.fu-text{flex:1;font-size:12px;color:#e2e8f0;line-height:1.5}
+.fu-row.done .fu-text{text-decoration:line-through}
+.tag{
+font-size:9px;font-weight:700;flex-shrink:0;border-radius:4px;
+padding:2px 6px;display:flex;align-items:center;gap:3px;
+font-family:‘IBM Plex Mono’,monospace;
+}
+
+/* ── NEWS ── */
+.news-btn{
+background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);
+color:#f59e0b;border-radius:7px;padding:5px 14px;font-size:11px;
+font-family:‘IBM Plex Mono’,monospace;float:right;margin-bottom:12px;
+}
+.news-btn:disabled{opacity:0.5;cursor:not-allowed}
+.news-empty{color:#334155;font-size:12px;text-align:center;padding:24px 0;clear:both}
+.news-item{border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:10px;margin-bottom:10px;clear:both}
+.news-title{font-size:13px;color:#e2e8f0;font-weight:600;line-height:1.4;margin-bottom:4px;display:block}
+.news-title:hover{color:#f59e0b}
+.news-summary{font-size:11px;color:#64748b;line-height:1.6}
+.news-source{font-size:10px;color:#f59e0b;margin-top:3px}
+
+/* ── IPO ── */
+.ipo-legend{display:flex;gap:16px;margin-bottom:14px;align-items:center}
+.ipo-dot{width:8px;height:8px;border-radius:2px}
+.ipo-leg-label{font-size:10px;color:#64748b}
+.ipo-hint{font-size:10px;color:#334155;margin-left:4px}
+.ipo-row{border-bottom:1px solid rgba(255,255,255,0.05);padding:10px 0;cursor:pointer}
+.ipo-top{display:flex;align-items:center;gap:10px}
+.ipo-verdict{
+padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;
+min-width:44px;text-align:center;font-family:‘IBM Plex Mono’,monospace;flex-shrink:0;
+}
+.ipo-info{flex:1}
+.ipo-name-row{display:flex;justify-content:space-between}
+.ipo-name{font-size:13px;color:#e2e8f0;font-weight:600}
+.ipo-window{font-size:11px;color:#64748b;font-family:‘IBM Plex Mono’,monospace}
+.ipo-sub-row{display:flex;justify-content:space-between;margin-top:2px}
+.ipo-sector{font-size:11px;color:#94a3b8}
+.ipo-val{font-size:11px;color:#f59e0b;font-family:‘IBM Plex Mono’,monospace}
+.ipo-arrow{color:#334155;font-size:11px}
+.ipo-take{
+margin-top:8px;padding:9px 12px;
+background:rgba(255,255,255,0.03);border-radius:8px;
+font-size:12px;color:#94a3b8;line-height:1.7;
+}
+.ipo-disclaimer{
+margin-top:14px;padding:9px 12px;
+background:rgba(245,158,11,0.05);border-radius:8px;
+border:1px solid rgba(245,158,11,0.1);
+font-size:10px;color:#475569;line-height:1.8;
+}
+
+.footer{text-align:center;margin-top:24px;font-size:10px;color:#1e293b;font-family:‘IBM Plex Mono’,monospace}
 </style>
+
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
-const { useState, useEffect, useCallback } = React;
+<div class="wrap">
 
-// ── DATA ──────────────────────────────────────────────────────────────────
-const WEEK_EVENTS_BASE = [
-{ date:“Wed Feb 25”, day:“TODAY”, events:[
-{ time:“10:00 AM”, title:“BA Working Group”,           loc:“Room 1A674 (Work)”,      type:“work”    },
-{ time:“7:30 PM”,  title:“Aviation Committee Meeting”, loc:“Zoom / Google Meet”,     type:“meeting”, note:“Neicko, Cocoa + chapter members” },
-]},
-{ date:“Thu Feb 26”, day:“THU”, events:[
-{ time:“All Day”,  title:“⚠️ Notion Renews Tomorrow”,  loc:“Cancel or buy yearly plan?”, type:“alert”  },
-{ time:“10:30 PM”, title:“Take BP”,                    loc:“Home”,                       type:“health” },
-]},
-{ date:“Fri Feb 27”, day:“FRI”, events:[
-{ time:“All Day”, title:“💰 FED PAYDAY”,                     loc:””,                        type:“finance”  },
-{ time:“All Day”, title:“🎂 Jazzy J Birthday”,                loc:””,                        type:“birthday” },
-{ time:“9:00 AM”, title:“Send STEM Aviation Reminder Email”, loc:“AF session this weekend”, type:“task”     },
-{ time:“All Day”, title:“Black Band @ Eddie V’s”,            loc:“Eddie V’s”,               type:“personal” },
-]},
-{ date:“Sat Feb 28”, day:“SAT”, events:[
-{ time:“All Day”, title:“🎂 Marcus Hampton’s 61st Birthday”, loc:””,             type:“birthday” },
-{ time:“All Day”, title:“⚠️ AppleCard Report Due”,           loc:“Pay balance!”, type:“alert”    },
-{ time:“All Day”, title:“Black Band @ Eddie V’s”,            loc:“Eddie V’s”,    type:“personal” },
-]},
-{ date:“Sun Mar 1”, day:“SUN”, events:[
-{ time:“11:00 AM”, title:“Plan Rehoboth Beach – Juneteenth”, loc:“Recurring planning session”,   type:“personal” },
-{ time:“2:00 PM”,  title:“Note to Sylvester (Chilo)”,        loc:“Backyard water line reminder”, type:“task”     },
-{ time:“6:00 PM”,  title:“Adjust Outside Lights”,            loc:“Home”,                         type:“home”     },
-{ time:“10:30 PM”, title:“Take BP”,                          loc:“Home”,                         type:“health”   },
-]},
-{ date:“Mon Mar 2”, day:“MON”, events:[
-{ time:“All Day”, title:“🎂 Tanya Patterson’s Birthday”, loc:””, type:“birthday” },
-]},
-{ date:“Tue Mar 3”, day:“TUE”, events:[
-{ time:“All Day”, title:“✈️ Depart for Miami”,    loc:“Virgin Cruise – Key West & Bahamas”, type:“travel” },
-{ time:“All Day”, title:“🏨 Check In: DUA Miami”, loc:“1300 S Miami Ave · Res# 90311477”,   type:“travel” },
-]},
-];
+  <!-- HEADER -->
 
-const HORIZON = [
-{ date:“Mar 3–8”,   title:“Virgin Cruise – Key West & Bahamas”,   detail:“With the AF fellas. Leave Miami Wed, return Sun.”,     type:“travel”   },
-{ date:“Mar 3–4”,   title:“Stay: DUA Miami, Autograph Collection”, detail:“Marriott · Res# 90311477”,                            type:“travel”   },
-{ date:“TBD”,       title:“Portugal Couples Trip Planning”,         detail:“Chapter 6-0 · Sep/Oct 2026 · Schedule Zoom w/ Karen”, type:“travel”   },
-{ date:“Recurring”, title:“Rehoboth Beach – Juneteenth Weekend”,    detail:“Planning session every Sun through March”,            type:“personal” },
-];
+  <div class="hdr">
+    <div>
+      <div class="hdr-title">⚡ COMMAND CENTER</div>
+      <div class="hdr-date" id="hdr-date"></div>
+    </div>
+    <div>
+      <div class="hdr-time" id="hdr-time"></div>
+      <div class="hdr-loc">📍 ALEXANDRIA, VA</div>
+    </div>
+  </div>
 
-const FOLLOWUPS = [
-{ id:1, text:“Cancel or buy annual Notion plan — renews Feb 26”,               urgency:“HIGH”, source:“CALENDAR”, done:false },
-{ id:2, text:“Pay AppleCard balance — report due Feb 28”,                       urgency:“HIGH”, source:“CALENDAR”, done:false },
-{ id:3, text:“Send STEM Aviation reminder email by Fri Feb 27, 9 AM”,          urgency:“HIGH”, source:“CALENDAR”, done:false },
-{ id:4, text:“Message Sylvester (Chilo) re: backyard water line – Sun Mar 1”,  urgency:“MED”,  source:“CALENDAR”, done:false },
-{ id:5, text:“Schedule Portugal trip Zoom call with Karen and travelers”,       urgency:“MED”,  source:“EMAIL”,    done:false },
-{ id:6, text:“Confirm AF cruise details (packing, meetup) — departs Mar 3”,    urgency:“MED”,  source:“CALENDAR”, done:false },
-];
+  <!-- ROW 1: Weather + Calendar -->
 
-const IPOS = [
-{ name:“Databricks”, sector:“AI / Data”,      window:“H2 2026”,    val:”$134B”,   verdict:“BUY”,   take:“Best risk/reward of the class. 65% YoY growth, $5.4B ARR, AI-native, cash-flow positive. A ‘when not if’ listing deeply embedded in enterprise workflows.” },
-{ name:“Cerebras”,   sector:“AI Chips”,        window:“Q2 2026”,    val:”$10B”,    verdict:“BUY”,   take:“Soonest opportunity. NVIDIA alternative with novel chip architecture. High risk/reward — speculative bet on AI infrastructure diversity.” },
-{ name:“Canva”,      sector:“Design SaaS”,      window:“2026–2027”,  val:”$42–50B”, verdict:“BUY”,   take:“Profitable, 240M users, pivoting to enterprise. Direct AI competition with Adobe. Strong fundamentals without the pure-AI hype premium.” },
-{ name:“SpaceX”,     sector:“Aerospace / AI”,   window:“Mid 2026”,   val:”$800B+”,  verdict:“WATCH”, take:“Iconic company but entering at 62–68x sales is steep. Starlink is the real business. Wait for post-IPO price discovery before committing capital.” },
-{ name:“OpenAI”,     sector:“AI / LLMs”,        window:“Q4 2026–27”, val:”$830B+”,  verdict:“WATCH”, take:“Dominant brand but complex structure and massive cloud costs. Needs to demonstrate profitability. Monitor the S-1 closely before deciding.” },
-{ name:“Stripe”,     sector:“Fintech”,          window:“Late 2026”,  val:”$120B+”,  verdict:“WATCH”, take:”‘Not in a rush’ is their stance. Profitable and best-in-class but may not list in 2026. Excellent long-term hold if priced fairly.” },
-{ name:“Discord”,    sector:“Social / Comms”,   window:“2026–2027”,  val:”$20–30B”, verdict:“AVOID”, take:“Monetization has consistently lagged user growth. 200M MAUs but limited revenue per user. Wait until they prove the business model post-IPO.” },
-{ name:“Kraken”,     sector:“Crypto Exchange”,  window:“2026”,       val:”$15B+”,   verdict:“WATCH”, take:“Crypto is hot again but exchange valuations are cyclical. Only if you have crypto tolerance — not a core portfolio play.” },
-];
-
-// ── STYLE MAPS ────────────────────────────────────────────────────────────
-const TYPE_COLOR = {
-work:”#6366f1”, meeting:”#8b5cf6”, alert:”#ef4444”, health:”#10b981”,
-finance:”#10b981”, birthday:”#f59e0b”, task:”#3b82f6”, personal:”#ec4899”,
-travel:”#0ea5e9”, home:”#84cc16”,
-};
-const VERDICT_STYLE = {
-BUY:  { bg:“rgba(16,185,129,0.15)”,  color:”#10b981”, border:“rgba(16,185,129,0.3)”  },
-WATCH:{ bg:“rgba(245,158,11,0.15)”,  color:”#f59e0b”, border:“rgba(245,158,11,0.3)”  },
-AVOID:{ bg:“rgba(239,68,68,0.12)”,   color:”#ef4444”, border:“rgba(239,68,68,0.3)”   },
-};
-const URGENCY_COLOR = { HIGH:”#ef4444”, MED:”#f59e0b”, LOW:”#10b981” };
-const SOURCE_STYLE  = {
-CALENDAR:{ color:”#a78bfa”, bg:“rgba(139,92,246,0.12)”, border:“rgba(139,92,246,0.3)”, icon:“📅” },
-EMAIL:   { color:”#38bdf8”, bg:“rgba(56,189,248,0.12)”, border:“rgba(56,189,248,0.3)”, icon:“📧” },
-};
-
-function wmoIcon(c) {
-const n=parseInt(c);
-if(n<=113)return”☀️”; if(n<=116)return”⛅”; if(n<=119)return”☁️”;
-if(n<=143)return”🌫️”; if(n<=260)return”🌦️”; if(n<=296)return”🌧️”;
-if(n<=330)return”❄️”; return”🌩️”;
-}
-
-function fmtTime(d) {
-return d.toLocaleTimeString(“en-US”,{ hour:“2-digit”, minute:“2-digit” });
-}
-
-// ── CARD ──────────────────────────────────────────────────────────────────
-function Card({ title, icon, accent=”#f59e0b”, children, scroll=false, maxH=400, headerRight=null }) {
-return (
-<div style={{ background:“rgba(15,23,42,0.85)”, border:“1px solid rgba(255,255,255,0.07)”, borderRadius:16, padding:“18px 20px”, backdropFilter:“blur(20px)”, display:“flex”, flexDirection:“column” }}>
-<div style={{ display:“flex”, alignItems:“center”, gap:8, paddingBottom:12, marginBottom:14, borderBottom:“1px solid rgba(255,255,255,0.06)” }}>
-<div style={{ width:30, height:30, borderRadius:8, flexShrink:0, background:`${accent}20`, border:`1px solid ${accent}40`, display:“flex”, alignItems:“center”, justifyContent:“center”, fontSize:15 }}>{icon}</div>
-<span style={{ fontSize:13, fontWeight:700, color:”#e2e8f0”, letterSpacing:0.3, fontFamily:”‘IBM Plex Mono’,monospace”, flex:1 }}>{title}</span>
-{headerRight && <div style={{ flexShrink:0 }}>{headerRight}</div>}
-</div>
-<div style={scroll ? { overflowY:“auto”, maxHeight:maxH, paddingRight:4 } : {}}>{children}</div>
-</div>
-);
-}
-
-// ── WEATHER ───────────────────────────────────────────────────────────────
-function Weather() {
-const [w,setW]=useState(null); const [loading,setLoading]=useState(true);
-useEffect(()=>{ fetch(“https://wttr.in/Alexandria,VA?format=j1”).then(r=>r.json()).then(d=>setW(d)).catch(()=>setW(null)).finally(()=>setLoading(false)); },[]);
-if(loading) return <div style={{color:”#475569”,fontSize:12}}>Loading weather…</div>;
-if(!w)      return <div style={{color:”#475569”,fontSize:12}}>📍 Alexandria, VA — weather unavailable</div>;
-const cur=w.current_condition?.[0]; const days=w.weather?.slice(0,5)||[];
-const dayLabel=s=>new Date(s).toLocaleDateString(“en-US”,{weekday:“short”});
-return (
-<div>
-<div style={{display:“flex”,alignItems:“center”,gap:14,marginBottom:14}}>
-<span style={{fontSize:40}}>{wmoIcon(cur?.weatherCode)}</span>
-<div>
-<div style={{fontSize:30,fontWeight:700,color:”#f1f5f9”,lineHeight:1,fontFamily:”‘IBM Plex Mono’,monospace”}}>{cur?.temp_F}°F</div>
-<div style={{fontSize:12,color:”#94a3b8”,marginTop:3}}>{cur?.weatherDesc?.[0]?.value} · Feels {cur?.FeelsLikeF}°F</div>
-<div style={{fontSize:11,color:”#f59e0b”,marginTop:2}}>📍 Alexandria, VA</div>
-</div>
-</div>
-<div style={{display:“flex”,gap:6}}>
-{days.map((d,i)=>(
-<div key={i} style={{flex:1,background:“rgba(255,255,255,0.04)”,borderRadius:8,padding:“7px 4px”,textAlign:“center”,border:“1px solid rgba(255,255,255,0.06)”}}>
-<div style={{fontSize:9,color:”#64748b”,marginBottom:2,fontWeight:700}}>{i===0?“NOW”:dayLabel(d.date)}</div>
-<div style={{fontSize:18}}>{wmoIcon(d.hourly?.[4]?.weatherCode)}</div>
-<div style={{fontSize:12,color:”#f1f5f9”,fontWeight:600}}>{d.maxtempF}°</div>
-<div style={{fontSize:10,color:”#64748b”}}>{d.mintempF}°</div>
-</div>
-))}
-</div>
-</div>
-);
-}
-
-// ── NEWS FEED (RSS) ───────────────────────────────────────────────────────
-const RSS_PROXY = “https://api.rss2json.com/v1/api.json?rss_url=”;
-const NEWS_SOURCES = {
-ai: [
-{ url:“https://www.theverge.com/rss/ai-artificial-intelligence/index.xml”, name:“The Verge”   },
-{ url:“https://techcrunch.com/feed/”,                                       name:“TechCrunch”  },
-{ url:“https://feeds.feedburner.com/venturebeat/SZYF”,                      name:“VentureBeat” },
-],
-travel: [
-{ url:“https://www.travelandleisure.com/rss/all.rss”,   name:“Travel + Leisure”    },
-{ url:“https://www.cntraveler.com/feed/rss”,            name:“Condé Nast Traveler” },
-{ url:“https://feeds.bbci.co.uk/news/world/rss.xml”,    name:“BBC World”           },
-],
-};
-
-function NewsFeed({ feedKey, emptyLabel }) {
-const [news,setNews]=useState([]); const [loading,setLoading]=useState(false);
-const [loaded,setLoaded]=useState(false); const [error,setError]=useState(null);
-
-const load = useCallback(async () => {
-setLoading(true); setError(null);
-const sources=NEWS_SOURCES[feedKey]||[]; const allItems=[];
-await Promise.all(sources.map(async src => {
-try {
-const res=await fetch(`${RSS_PROXY}${encodeURIComponent(src.url)}&count=3`);
-const data=await res.json();
-if(data.status===“ok”&&data.items){
-data.items.slice(0,3).forEach(item=>{
-allItems.push({
-title:item.title,
-summary:item.description?item.description.replace(/<[^>]+>/g,””).slice(0,160).trim()+”…”:””,
-source:src.name, pubDate:item.pubDate, link:item.link,
-});
-});
-}
-} catch(_){}
-}));
-allItems.sort((a,b)=>new Date(b.pubDate)-new Date(a.pubDate));
-setNews(allItems.slice(0,5)); setLoaded(true); setLoading(false);
-},[feedKey]);
-
-return (
-<div>
-<div style={{textAlign:“right”,marginBottom:12}}>
-<button onClick={load} disabled={loading} style={{
-background:loading?“rgba(245,158,11,0.08)”:“rgba(245,158,11,0.15)”,
-border:“1px solid rgba(245,158,11,0.3)”,color:”#f59e0b”,
-borderRadius:7,padding:“5px 14px”,fontSize:11,
-cursor:loading?“not-allowed”:“pointer”,fontFamily:”‘IBM Plex Mono’,monospace”,
-}}>{loading?“Loading…”:loaded?“↻ Refresh”:“Load News”}</button>
-</div>
-{error&&<div style={{color:”#ef4444”,fontSize:12}}>{error}</div>}
-{!loaded&&!loading&&<div style={{color:”#334155”,fontSize:12,textAlign:“center”,padding:“24px 0”}}>{emptyLabel}</div>}
-{news.map((item,i)=>(
-<div key={i} style={{borderBottom:“1px solid rgba(255,255,255,0.05)”,paddingBottom:10,marginBottom:10}}>
-<a href={item.link} target=”_blank” rel=“noreferrer” style={{textDecoration:“none”}}>
-<div style={{fontSize:13,color:”#e2e8f0”,fontWeight:600,lineHeight:1.4,marginBottom:4}}>{item.title}</div>
-</a>
-<div style={{fontSize:11,color:”#64748b”,lineHeight:1.6}}>{item.summary}</div>
-<div style={{fontSize:10,color:”#f59e0b”,marginTop:3}}>— {item.source}</div>
-</div>
-))}
-</div>
-);
-}
-
-// ── FOLLOW-UPS ────────────────────────────────────────────────────────────
-function FollowUps() {
-const [items,setItems]=useState(FOLLOWUPS);
-const toggle=id=>setItems(p=>p.map(f=>f.id===id?{…f,done:!f.done}:f));
-return (
-<div>
-<div style={{display:“flex”,gap:14,marginBottom:12,alignItems:“center”}}>
-{Object.entries(SOURCE_STYLE).map(([key,s])=>(
-<div key={key} style={{display:“flex”,alignItems:“center”,gap:4}}>
-<span style={{fontSize:11}}>{s.icon}</span>
-<span style={{fontSize:9,color:”#475569”,fontFamily:”‘IBM Plex Mono’,monospace”}}>{key}</span>
-</div>
-))}
-<span style={{fontSize:9,color:”#334155”,fontFamily:”‘IBM Plex Mono’,monospace”}}>· TAP TO COMPLETE</span>
-</div>
-{items.map(f=>{
-const ss=SOURCE_STYLE[f.source]||SOURCE_STYLE.CALENDAR;
-return (
-<div key={f.id} onClick={()=>toggle(f.id)} style={{
-display:“flex”,alignItems:“flex-start”,gap:8,
-padding:“9px 0”,borderBottom:“1px solid rgba(255,255,255,0.05)”,
-cursor:“pointer”,opacity:f.done?0.35:1,transition:“opacity 0.2s”,
-}}>
-<div style={{
-width:17,height:17,borderRadius:4,flexShrink:0,marginTop:2,
-border:`2px solid ${f.done?"#10b981":"#334155"}`,
-background:f.done?”#10b981”:“transparent”,
-display:“flex”,alignItems:“center”,justifyContent:“center”,
-}}>
-{f.done&&<span style={{color:”#fff”,fontSize:10,lineHeight:1}}>✓</span>}
-</div>
-<div style={{flex:1,fontSize:12,color:”#e2e8f0”,lineHeight:1.5,textDecoration:f.done?“line-through”:“none”}}>{f.text}</div>
-<div style={{
-fontSize:9,fontWeight:700,flexShrink:0,borderRadius:4,padding:“2px 6px”,
-display:“flex”,alignItems:“center”,gap:3,
-color:ss.color,background:ss.bg,border:`1px solid ${ss.border}`,
-fontFamily:”‘IBM Plex Mono’,monospace”,
-}}>{ss.icon} {f.source}</div>
-<div style={{
-fontSize:9,fontWeight:700,flexShrink:0,borderRadius:4,padding:“2px 6px”,
-color:URGENCY_COLOR[f.urgency],
-background:`${URGENCY_COLOR[f.urgency]}18`,
-border:`1px solid ${URGENCY_COLOR[f.urgency]}35`,
-fontFamily:”‘IBM Plex Mono’,monospace”,
-}}>{f.urgency}</div>
-</div>
-);
-})}
-</div>
-);
-}
-
-// ── CALENDAR WEEK ─────────────────────────────────────────────────────────
-function CalWeek({ events }) {
-return (
-<div>
-{events.map((day,i)=>(
-<div key={i} style={{marginBottom:16}}>
-<div style={{display:“flex”,alignItems:“baseline”,gap:8,marginBottom:6}}>
-<span style={{fontSize:10,fontWeight:800,letterSpacing:1,color:day.day===“TODAY”?”#f59e0b”:”#475569”,fontFamily:”‘IBM Plex Mono’,monospace”}}>{day.day}</span>
-<span style={{fontSize:11,color:”#334155”}}>{day.date}</span>
-</div>
-{day.events.map((ev,j)=>(
-<div key={j} style={{display:“flex”,alignItems:“flex-start”,gap:8,padding:“7px 10px”,borderRadius:8,marginBottom:4,background:“rgba(255,255,255,0.025)”,borderLeft:`3px solid ${TYPE_COLOR[ev.type]||"#334155"}`}}>
-<div style={{fontSize:10,color:”#475569”,minWidth:56,paddingTop:1,fontFamily:”‘IBM Plex Mono’,monospace”}}>{ev.time}</div>
-<div>
-<div style={{fontSize:12,color:”#e2e8f0”,fontWeight:500,lineHeight:1.4}}>{ev.title}</div>
-{ev.loc&&<div style={{fontSize:11,color:”#64748b”,marginTop:2}}>{ev.loc}</div>}
-{ev.note&&<div style={{fontSize:10,color:”#8b5cf6”,marginTop:2}}>👥 {ev.note}</div>}
-</div>
-</div>
-))}
-</div>
-))}
-</div>
-);
-}
-
-// ── CALENDAR HORIZON ──────────────────────────────────────────────────────
-function CalHorizon() {
-return (
-<div>
-<div style={{fontSize:10,color:”#475569”,marginBottom:14,letterSpacing:1,fontWeight:700,fontFamily:”‘IBM Plex Mono’,monospace”}}>KEY EVENTS ON THE HORIZON</div>
-{HORIZON.map((ev,i)=>(
-<div key={i} style={{padding:“10px 14px”,borderRadius:10,marginBottom:10,background:“rgba(255,255,255,0.03)”,borderLeft:`3px solid ${TYPE_COLOR[ev.type]||"#334155"}`}}>
-<div style={{display:“flex”,justifyContent:“space-between”,alignItems:“flex-start”,gap:8}}>
-<div style={{fontSize:13,color:”#e2e8f0”,fontWeight:600}}>{ev.title}</div>
-<div style={{fontSize:10,color:”#f59e0b”,fontWeight:700,flexShrink:0,fontFamily:”‘IBM Plex Mono’,monospace”}}>{ev.date}</div>
-</div>
-<div style={{fontSize:11,color:”#64748b”,marginTop:4}}>{ev.detail}</div>
-</div>
-))}
-</div>
-);
-}
-
-// ── CALENDAR PANEL ────────────────────────────────────────────────────────
-function CalendarPanel() {
-const [calTab,    setCalTab]    = useState(“week”);
-const [spinning,  setSpinning]  = useState(false);
-const [lastSync,  setLastSync]  = useState(null);
-const [events,    setEvents]    = useState(WEEK_EVENTS_BASE);
-
-const handleRefresh = () => {
-setSpinning(true);
-// Simulate a refresh — in a future version this will pull live calendar data
-setTimeout(() => {
-setEvents([…WEEK_EVENTS_BASE]); // re-set to trigger re-render
-setLastSync(new Date());
-setSpinning(false);
-}, 1200);
-};
-
-const RefreshBtn = (
-<div style={{display:“flex”,alignItems:“center”,gap:8}}>
-{lastSync && (
-<span style={{fontSize:9,color:”#334155”,fontFamily:”‘IBM Plex Mono’,monospace”}}>
-synced {fmtTime(lastSync)}
-</span>
-)}
-<button
-onClick={handleRefresh}
-disabled={spinning}
-title=“Refresh calendar”
-style={{
-background:“rgba(139,92,246,0.12)”,
-border:“1px solid rgba(139,92,246,0.3)”,
-color:”#a78bfa”,
-borderRadius:7,
-padding:“4px 10px”,
-fontSize:13,
-cursor:spinning?“not-allowed”:“pointer”,
-display:“flex”,alignItems:“center”,gap:5,
-fontFamily:”‘IBM Plex Mono’,monospace”,
-transition:“background 0.2s”,
-}}
->
-<span style={{
-display:“inline-block”,
-animation: spinning ? “spin 0.8s linear infinite” : “none”,
-}}>↻</span>
-<span style={{fontSize:10,fontWeight:700}}>{spinning?“Syncing…”:“Refresh”}</span>
-</button>
-</div>
-);
-
-return (
-<Card title="CALENDAR" icon="📅" accent="#8b5cf6" scroll maxH={440} headerRight={RefreshBtn}>
-<div style={{display:“flex”,gap:6,marginBottom:14}}>
-{[[“week”,“This Week (Detailed)”],[“horizon”,“2-Week Horizon”]].map(([v,lbl])=>(
-<button key={v} onClick={()=>setCalTab(v)} style={{
-padding:“5px 14px”,borderRadius:7,fontSize:11,
-background:calTab===v?“rgba(139,92,246,0.2)”:“rgba(255,255,255,0.03)”,
-border:`1px solid ${calTab===v?"rgba(139,92,246,0.5)":"rgba(255,255,255,0.07)"}`,
-color:calTab===v?”#a78bfa”:”#64748b”,cursor:“pointer”,
-fontWeight:calTab===v?700:400,fontFamily:”‘IBM Plex Mono’,monospace”,
-}}>{lbl}</button>
-))}
-</div>
+  <div class="row1">
 
 ```
-  {spinning && (
-    <div style={{
-      textAlign:"center",padding:"12px 0",marginBottom:8,
-      background:"rgba(139,92,246,0.06)",borderRadius:8,
-      border:"1px solid rgba(139,92,246,0.15)",
-      fontSize:11,color:"#a78bfa",fontFamily:"'IBM Plex Mono',monospace",
-    }}>
-      ↻ Syncing calendar data…
-    </div>
-  )}
+<!-- WEATHER -->
+<div class="card">
+  <div class="card-hdr">
+    <div class="card-icon" style="background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.3)">🌤</div>
+    <span class="card-title">WEATHER THIS WEEK</span>
+  </div>
+  <div id="weather-content">
+    <div style="color:#475569;font-size:12px">Loading weather…</div>
+  </div>
+</div>
 
-  {calTab==="week" ? <CalWeek events={events}/> : <CalHorizon/>}
-</Card>
+<!-- CALENDAR -->
+<div class="card">
+  <div class="card-hdr">
+    <div class="card-icon" style="background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3)">📅</div>
+    <span class="card-title">CALENDAR</span>
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+      <span class="cal-sync" id="cal-sync-time"></span>
+      <button class="cal-refresh" id="cal-refresh-btn" onclick="refreshCalendar()">
+        <span class="spin" id="cal-spin">↻</span>
+        <span id="cal-refresh-label">Refresh</span>
+      </button>
+    </div>
+  </div>
+  <div class="cal-tabs">
+    <button class="cal-tab active" id="tab-week" onclick="switchTab('week')">This Week (Detailed)</button>
+    <button class="cal-tab" id="tab-horizon" onclick="switchTab('horizon')">2-Week Horizon</button>
+  </div>
+  <div id="cal-syncing" style="display:none" class="cal-syncing">↻ Syncing calendar data…</div>
+  <div class="card-body" id="cal-body"></div>
+</div>
 ```
 
-);
-}
+  </div>
 
-// ── IPO TABLE ─────────────────────────────────────────────────────────────
-function IPOTable() {
-const [open,setOpen]=useState(null);
-return (
-<div>
-<div style={{display:“flex”,gap:16,marginBottom:14}}>
-{Object.entries(VERDICT_STYLE).map(([v,s])=>(
-<div key={v} style={{display:“flex”,alignItems:“center”,gap:5}}>
-<div style={{width:8,height:8,borderRadius:2,background:s.color}}/>
-<span style={{fontSize:10,color:”#64748b”}}>{v}</span>
-</div>
-))}
-<span style={{fontSize:10,color:”#334155”,marginLeft:4}}>· Tap row for my take</span>
-</div>
-{IPOS.map((ipo,i)=>{
-const vs=VERDICT_STYLE[ipo.verdict]; const isOpen=open===i;
-return (
-<div key={i} onClick={()=>setOpen(isOpen?null:i)} style={{borderBottom:“1px solid rgba(255,255,255,0.05)”,padding:“10px 0”,cursor:“pointer”}}>
-<div style={{display:“flex”,alignItems:“center”,gap:10}}>
-<div style={{padding:“2px 8px”,borderRadius:5,fontSize:10,fontWeight:700,background:vs.bg,color:vs.color,border:`1px solid ${vs.border}`,minWidth:44,textAlign:“center”,fontFamily:”‘IBM Plex Mono’,monospace”}}>{ipo.verdict}</div>
-<div style={{flex:1}}>
-<div style={{display:“flex”,justifyContent:“space-between”}}>
-<span style={{fontSize:13,color:”#e2e8f0”,fontWeight:600}}>{ipo.name}</span>
-<span style={{fontSize:11,color:”#64748b”,fontFamily:”‘IBM Plex Mono’,monospace”}}>{ipo.window}</span>
-</div>
-<div style={{display:“flex”,justifyContent:“space-between”,marginTop:2}}>
-<span style={{fontSize:11,color:”#94a3b8”}}>{ipo.sector}</span>
-<span style={{fontSize:11,color:”#f59e0b”,fontFamily:”‘IBM Plex Mono’,monospace”}}>{ipo.val}</span>
-</div>
-</div>
-<span style={{color:”#334155”,fontSize:11}}>{isOpen?“▲”:“▼”}</span>
-</div>
-{isOpen&&(
-<div style={{marginTop:8,padding:“9px 12px”,background:“rgba(255,255,255,0.03)”,borderRadius:8,fontSize:12,color:”#94a3b8”,lineHeight:1.7,borderLeft:`2px solid ${vs.color}`}}>
-💬 {ipo.take}
-</div>
-)}
-</div>
-);
-})}
-<div style={{marginTop:14,padding:“9px 12px”,background:“rgba(245,158,11,0.05)”,borderRadius:8,border:“1px solid rgba(245,158,11,0.1)”}}>
-<div style={{fontSize:10,color:”#475569”,lineHeight:1.8}}>⚠️ <strong style={{color:”#f59e0b”}}>Disclaimer:</strong> Not financial advice. IPO timing and valuations shift. Always consult a financial advisor before investing.</div>
-</div>
-</div>
-);
-}
+  <!-- ROW 2: Follow-ups + AI News + Travel News -->
 
-// ── MAIN ──────────────────────────────────────────────────────────────────
-function App() {
-const [now,setNow]=useState(new Date());
-useEffect(()=>{ const t=setInterval(()=>setNow(new Date()),1000); return()=>clearInterval(t); },[]);
-const timeStr=now.toLocaleTimeString(“en-US”,{hour:“2-digit”,minute:“2-digit”,second:“2-digit”});
-const dateStr=now.toLocaleDateString(“en-US”,{weekday:“long”,month:“long”,day:“numeric”,year:“numeric”});
-
-return (
-<div style={{minHeight:“100vh”,background:“linear-gradient(140deg,#020617 0%,#080f1f 50%,#020617 100%)”,padding:“20px 16px 48px”,backgroundAttachment:“fixed”}}>
-<div style={{position:“fixed”,inset:0,pointerEvents:“none”,zIndex:0,backgroundImage:“radial-gradient(circle at 1px 1px, rgba(255,255,255,0.018) 1px, transparent 0)”,backgroundSize:“30px 30px”}}/>
-<div style={{position:“relative”,zIndex:1,maxWidth:1380,margin:“0 auto”}}>
+  <div class="row2">
 
 ```
-    {/* HEADER */}
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"18px 24px",marginBottom:20,background:"rgba(15,23,42,0.8)",borderRadius:16,backdropFilter:"blur(24px)",border:"1px solid rgba(245,158,11,0.15)"}}>
-      <div>
-        <div style={{fontSize:22,fontWeight:800,color:"#f1f5f9",letterSpacing:-0.5,fontFamily:"'IBM Plex Mono',monospace"}}>⚡ COMMAND CENTER</div>
-        <div style={{fontSize:11,color:"#475569",marginTop:3}}>{dateStr}</div>
-      </div>
-      <div style={{textAlign:"right"}}>
-        <div style={{fontSize:26,fontWeight:700,color:"#f59e0b",letterSpacing:2,fontFamily:"'IBM Plex Mono',monospace"}}>{timeStr}</div>
-        <div style={{fontSize:10,color:"#475569",marginTop:3}}>📍 ALEXANDRIA, VA</div>
-      </div>
-    </div>
+<!-- FOLLOW-UPS -->
+<div class="card">
+  <div class="card-hdr">
+    <div class="card-icon" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3)">✅</div>
+    <span class="card-title">FOLLOW-UPS & ACTIONS</span>
+  </div>
+  <div class="card-body" id="followups-body"></div>
+</div>
 
-    {/* ROW 1 */}
-    <div style={{display:"grid",gridTemplateColumns:"minmax(260px,300px) 1fr",gap:16,marginBottom:16}}>
-      <Card title="WEATHER THIS WEEK" icon="🌤" accent="#38bdf8"><Weather/></Card>
-      <CalendarPanel/>
-    </div>
+<!-- AI NEWS -->
+<div class="card">
+  <div class="card-hdr">
+    <div class="card-icon" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3)">🤖</div>
+    <span class="card-title">AI NEWS</span>
+  </div>
+  <div class="card-body">
+    <button class="news-btn" id="ai-btn" onclick="loadNews('ai')">Load News</button>
+    <div id="ai-news-body"><div class="news-empty">Tap Load News to fetch the latest AI headlines</div></div>
+  </div>
+</div>
 
-    {/* ROW 2 */}
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16,marginBottom:16}}>
-      <Card title="FOLLOW-UPS & ACTION ITEMS" icon="✅" accent="#ef4444" scroll maxH={440}>
-        <FollowUps/>
-      </Card>
-      <Card title="AI NEWS" icon="🤖" accent="#6366f1" scroll maxH={440}>
-        <NewsFeed feedKey="ai" emptyLabel="Tap Load News to fetch the latest AI headlines"/>
-      </Card>
-      <Card title="TRAVEL ABROAD" icon="✈️" accent="#0ea5e9" scroll maxH={440}>
-        <NewsFeed feedKey="travel" emptyLabel="Tap Load News to fetch the latest travel headlines"/>
-      </Card>
-    </div>
-
-    {/* ROW 3 */}
-    <Card title="IPO WATCHLIST — NEXT 3–6 MONTHS" icon="📈" accent="#10b981" scroll maxH={520}>
-      <IPOTable/>
-    </Card>
-
-    <div style={{textAlign:"center",marginTop:24,fontSize:10,color:"#1e293b",fontFamily:"'IBM Plex Mono',monospace"}}>
-      Built with Claude · {dateStr}
-    </div>
+<!-- TRAVEL NEWS -->
+<div class="card">
+  <div class="card-hdr">
+    <div class="card-icon" style="background:rgba(14,165,233,0.15);border:1px solid rgba(14,165,233,0.3)">✈️</div>
+    <span class="card-title">TRAVEL ABROAD</span>
+  </div>
+  <div class="card-body">
+    <button class="news-btn" id="travel-btn" onclick="loadNews('travel')">Load News</button>
+    <div id="travel-news-body"><div class="news-empty">Tap Load News to fetch the latest travel headlines</div></div>
   </div>
 </div>
 ```
 
-);
+  </div>
+
+  <!-- ROW 3: IPO Watchlist -->
+
+  <div class="row3">
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-icon" style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3)">📈</div>
+        <span class="card-title">IPO WATCHLIST — NEXT 3–6 MONTHS</span>
+      </div>
+      <div class="card-body" style="max-height:520px" id="ipo-body"></div>
+    </div>
+  </div>
+
+  <div class="footer" id="footer"></div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────
+const TYPE_COLOR = {
+  work:"#6366f1",meeting:"#8b5cf6",alert:"#ef4444",health:"#10b981",
+  finance:"#10b981",birthday:"#f59e0b",task:"#3b82f6",personal:"#ec4899",
+  travel:"#0ea5e9",home:"#84cc16"
+};
+const WEEK_EVENTS = [
+  {date:"Wed Feb 25",day:"TODAY",events:[
+    {time:"10:00 AM",title:"BA Working Group",loc:"Room 1A674 (Work)",type:"work"},
+    {time:"7:30 PM",title:"Aviation Committee Meeting",loc:"Zoom / Google Meet",type:"meeting",note:"Neicko, Cocoa + chapter members"},
+  ]},
+  {date:"Thu Feb 26",day:"THU",events:[
+    {time:"All Day",title:"⚠️ Notion Renews Tomorrow",loc:"Cancel or buy yearly plan?",type:"alert"},
+    {time:"10:30 PM",title:"Take BP",loc:"Home",type:"health"},
+  ]},
+  {date:"Fri Feb 27",day:"FRI",events:[
+    {time:"All Day",title:"💰 FED PAYDAY",loc:"",type:"finance"},
+    {time:"All Day",title:"🎂 Jazzy J Birthday",loc:"",type:"birthday"},
+    {time:"9:00 AM",title:"Send STEM Aviation Reminder Email",loc:"AF session this weekend",type:"task"},
+    {time:"All Day",title:"Black Band @ Eddie V's",loc:"Eddie V's",type:"personal"},
+  ]},
+  {date:"Sat Feb 28",day:"SAT",events:[
+    {time:"All Day",title:"🎂 Marcus Hampton's 61st Birthday",loc:"",type:"birthday"},
+    {time:"All Day",title:"⚠️ AppleCard Report Due",loc:"Pay balance!",type:"alert"},
+    {time:"All Day",title:"Black Band @ Eddie V's",loc:"Eddie V's",type:"personal"},
+  ]},
+  {date:"Sun Mar 1",day:"SUN",events:[
+    {time:"11:00 AM",title:"Plan Rehoboth Beach – Juneteenth",loc:"Recurring planning session",type:"personal"},
+    {time:"2:00 PM",title:"Note to Sylvester (Chilo)",loc:"Backyard water line reminder",type:"task"},
+    {time:"6:00 PM",title:"Adjust Outside Lights",loc:"Home",type:"home"},
+    {time:"10:30 PM",title:"Take BP",loc:"Home",type:"health"},
+  ]},
+  {date:"Mon Mar 2",day:"MON",events:[
+    {time:"All Day",title:"🎂 Tanya Patterson's Birthday",loc:"",type:"birthday"},
+  ]},
+  {date:"Tue Mar 3",day:"TUE",events:[
+    {time:"All Day",title:"✈️ Depart for Miami",loc:"Virgin Cruise – Key West & Bahamas",type:"travel"},
+    {time:"All Day",title:"🏨 Check In: DUA Miami",loc:"1300 S Miami Ave · Res# 90311477",type:"travel"},
+  ]},
+];
+const HORIZON = [
+  {date:"Mar 3–8",title:"Virgin Cruise – Key West & Bahamas",detail:"With the AF fellas. Leave Miami Wed, return Sun.",type:"travel"},
+  {date:"Mar 3–4",title:"Stay: DUA Miami, Autograph Collection",detail:"Marriott · Res# 90311477",type:"travel"},
+  {date:"TBD",title:"Portugal Couples Trip Planning",detail:"Chapter 6-0 · Sep/Oct 2026 · Schedule Zoom w/ Karen",type:"travel"},
+  {date:"Recurring",title:"Rehoboth Beach – Juneteenth Weekend",detail:"Planning session every Sun through March",type:"personal"},
+];
+const FOLLOWUPS = [
+  {id:1,text:"Cancel or buy annual Notion plan — renews Feb 26",urgency:"HIGH",source:"CALENDAR",done:false},
+  {id:2,text:"Pay AppleCard balance — report due Feb 28",urgency:"HIGH",source:"CALENDAR",done:false},
+  {id:3,text:"Send STEM Aviation reminder email by Fri Feb 27, 9 AM",urgency:"HIGH",source:"CALENDAR",done:false},
+  {id:4,text:"Message Sylvester (Chilo) re: backyard water line – Sun Mar 1",urgency:"MED",source:"CALENDAR",done:false},
+  {id:5,text:"Schedule Portugal trip Zoom call with Karen and travelers",urgency:"MED",source:"EMAIL",done:false},
+  {id:6,text:"Confirm AF cruise details (packing, meetup) — departs Mar 3",urgency:"MED",source:"CALENDAR",done:false},
+];
+const IPOS = [
+  {name:"Databricks",sector:"AI / Data",window:"H2 2026",val:"$134B",verdict:"BUY",take:"Best risk/reward of the class. 65% YoY growth, $5.4B ARR, AI-native, cash-flow positive. A 'when not if' listing deeply embedded in enterprise workflows."},
+  {name:"Cerebras",sector:"AI Chips",window:"Q2 2026",val:"$10B",verdict:"BUY",take:"Soonest opportunity. NVIDIA alternative with novel chip architecture. High risk/reward — speculative bet on AI infrastructure diversity."},
+  {name:"Canva",sector:"Design SaaS",window:"2026–2027",val:"$42–50B",verdict:"BUY",take:"Profitable, 240M users, pivoting to enterprise. Direct AI competition with Adobe. Strong fundamentals without the pure-AI hype premium."},
+  {name:"SpaceX",sector:"Aerospace / AI",window:"Mid 2026",val:"$800B+",verdict:"WATCH",take:"Iconic company but entering at 62–68x sales is steep. Starlink is the real business. Wait for post-IPO price discovery before committing capital."},
+  {name:"OpenAI",sector:"AI / LLMs",window:"Q4 2026–27",val:"$830B+",verdict:"WATCH",take:"Dominant brand but complex structure and massive cloud costs. Needs to demonstrate profitability. Monitor the S-1 closely before deciding."},
+  {name:"Stripe",sector:"Fintech",window:"Late 2026",val:"$120B+",verdict:"WATCH",take:"'Not in a rush' is their stance. Profitable and best-in-class but may not list in 2026. Excellent long-term hold if priced fairly."},
+  {name:"Discord",sector:"Social / Comms",window:"2026–2027",val:"$20–30B",verdict:"AVOID",take:"Monetization has consistently lagged user growth. 200M MAUs but limited revenue per user. Wait until they prove the business model post-IPO."},
+  {name:"Kraken",sector:"Crypto Exchange",window:"2026",val:"$15B+",verdict:"WATCH",take:"Crypto is hot again but exchange valuations are cyclical. Only if you have crypto tolerance — not a core portfolio play."},
+];
+const VERDICT_STYLE = {
+  BUY: {bg:"rgba(16,185,129,0.15)",color:"#10b981",border:"rgba(16,185,129,0.3)"},
+  WATCH:{bg:"rgba(245,158,11,0.15)",color:"#f59e0b",border:"rgba(245,158,11,0.3)"},
+  AVOID:{bg:"rgba(239,68,68,0.12)",color:"#ef4444",border:"rgba(239,68,68,0.3)"},
+};
+const SOURCE_STYLE = {
+  CALENDAR:{color:"#a78bfa",bg:"rgba(139,92,246,0.12)",border:"rgba(139,92,246,0.3)",icon:"📅"},
+  EMAIL:   {color:"#38bdf8",bg:"rgba(56,189,248,0.12)", border:"rgba(56,189,248,0.3)", icon:"📧"},
+};
+const URGENCY_COLOR = {HIGH:"#ef4444",MED:"#f59e0b",LOW:"#10b981"};
+const RSS_PROXY = "https://api.rss2json.com/v1/api.json?rss_url=";
+const NEWS_SOURCES = {
+  ai:[
+    {url:"https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",name:"The Verge"},
+    {url:"https://techcrunch.com/feed/",name:"TechCrunch"},
+    {url:"https://feeds.feedburner.com/venturebeat/SZYF",name:"VentureBeat"},
+  ],
+  travel:[
+    {url:"https://www.travelandleisure.com/rss/all.rss",name:"Travel + Leisure"},
+    {url:"https://www.cntraveler.com/feed/rss",name:"Condé Nast Traveler"},
+    {url:"https://feeds.bbci.co.uk/news/world/rss.xml",name:"BBC World"},
+  ],
+};
+
+// ── CLOCK ─────────────────────────────────────────────────────────────────
+function updateClock(){
+  const now = new Date();
+  document.getElementById('hdr-time').textContent =
+    now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('hdr-date').textContent =
+    now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  document.getElementById('footer').textContent =
+    'Built with Claude · ' + now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── WEATHER ───────────────────────────────────────────────────────────────
+function wmoIcon(c){
+  const n=parseInt(c);
+  if(n<=113)return'☀️';if(n<=116)return'⛅';if(n<=119)return'☁️';
+  if(n<=143)return'🌫️';if(n<=260)return'🌦️';if(n<=296)return'🌧️';
+  if(n<=330)return'❄️';return'🌩️';
+}
+fetch('https://wttr.in/Alexandria,VA?format=j1')
+  .then(r=>r.json())
+  .then(d=>{
+    const cur=d.current_condition[0];
+    const days=d.weather.slice(0,5);
+    const dayLabel=s=>new Date(s).toLocaleDateString('en-US',{weekday:'short'});
+    let html = `
+      <div class="wx-current">
+        <span style="font-size:40px">${wmoIcon(cur.weatherCode)}</span>
+        <div>
+          <div class="wx-temp">${cur.temp_F}°F</div>
+          <div class="wx-desc">${cur.weatherDesc[0].value} · Feels ${cur.FeelsLikeF}°F</div>
+          <div class="wx-loc">📍 Alexandria, VA</div>
+        </div>
+      </div>
+      <div class="wx-days">`;
+    days.forEach((d,i)=>{
+      html+=`<div class="wx-day">
+        <div class="wx-day-label">${i===0?'NOW':dayLabel(d.date)}</div>
+        <div class="wx-day-icon">${wmoIcon(d.hourly[4]?.weatherCode)}</div>
+        <div class="wx-day-hi">${d.maxtempF}°</div>
+        <div class="wx-day-lo">${d.mintempF}°</div>
+      </div>`;
+    });
+    html+='</div>';
+    document.getElementById('weather-content').innerHTML=html;
+  })
+  .catch(()=>{
+    document.getElementById('weather-content').innerHTML='<div style="color:#475569;font-size:12px">Weather unavailable</div>';
+  });
+
+// ── CALENDAR ──────────────────────────────────────────────────────────────
+let currentTab = 'week';
+
+function renderWeek(){
+  let html='';
+  WEEK_EVENTS.forEach(day=>{
+    html+=`<div class="day-block">
+      <div class="day-label">
+        <span class="day-name ${day.day==='TODAY'?'today':''}">${day.day}</span>
+        <span class="day-date">${day.date}</span>
+      </div>`;
+    day.events.forEach(ev=>{
+      const color=TYPE_COLOR[ev.type]||'#334155';
+      html+=`<div class="event-row" style="border-left:3px solid ${color}">
+        <div class="event-time">${ev.time}</div>
+        <div>
+          <div class="event-title">${ev.title}</div>
+          ${ev.loc?`<div class="event-loc">${ev.loc}</div>`:''}
+          ${ev.note?`<div class="event-note">👥 ${ev.note}</div>`:''}
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  return html;
 }
 
-ReactDOM.createRoot(document.getElementById(“root”)).render(<App/>);
+function renderHorizon(){
+  let html='<div class="hz-label">KEY EVENTS ON THE HORIZON</div>';
+  HORIZON.forEach(ev=>{
+    const color=TYPE_COLOR[ev.type]||'#334155';
+    html+=`<div class="hz-item" style="border-left:3px solid ${color}">
+      <div class="hz-top">
+        <div class="hz-title">${ev.title}</div>
+        <div class="hz-date">${ev.date}</div>
+      </div>
+      <div class="hz-detail">${ev.detail}</div>
+    </div>`;
+  });
+  return html;
+}
+
+function switchTab(tab){
+  currentTab=tab;
+  document.getElementById('tab-week').className='cal-tab'+(tab==='week'?' active':'');
+  document.getElementById('tab-horizon').className='cal-tab'+(tab==='horizon'?' active':'');
+  document.getElementById('cal-body').innerHTML=tab==='week'?renderWeek():renderHorizon();
+}
+
+function refreshCalendar(){
+  const btn=document.getElementById('cal-refresh-btn');
+  const spin=document.getElementById('cal-spin');
+  const lbl=document.getElementById('cal-refresh-label');
+  const syncing=document.getElementById('cal-syncing');
+  btn.disabled=true;
+  spin.classList.add('spinning');
+  lbl.textContent='Syncing…';
+  syncing.style.display='block';
+  setTimeout(()=>{
+    switchTab(currentTab);
+    syncing.style.display='none';
+    spin.classList.remove('spinning');
+    lbl.textContent='Refresh';
+    btn.disabled=false;
+    const now=new Date();
+    document.getElementById('cal-sync-time').textContent=
+      'synced '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  },1200);
+}
+
+switchTab('week');
+
+// ── FOLLOW-UPS ────────────────────────────────────────────────────────────
+function renderFollowups(){
+  let html=`<div class="fu-legend">
+    <div class="fu-leg-item">📅 CALENDAR</div>
+    <div class="fu-leg-item">📧 EMAIL</div>
+    <span style="font-size:9px;color:#334155;font-family:'IBM Plex Mono',monospace">· TAP TO COMPLETE</span>
+  </div>`;
+  FOLLOWUPS.forEach(f=>{
+    const ss=SOURCE_STYLE[f.source]||SOURCE_STYLE.CALENDAR;
+    const uc=URGENCY_COLOR[f.urgency];
+    html+=`<div class="fu-row${f.done?' done':''}" onclick="toggleFU(${f.id})">
+      <div class="fu-check${f.done?' checked':''}" id="check-${f.id}">
+        ${f.done?'<span class="fu-check-mark">✓</span>':''}
+      </div>
+      <div class="fu-text" id="futext-${f.id}">${f.text}</div>
+      <div class="tag" style="color:${ss.color};background:${ss.bg};border:1px solid ${ss.border}">${ss.icon} ${f.source}</div>
+      <div class="tag" style="color:${uc};background:${uc}18;border:1px solid ${uc}35">${f.urgency}</div>
+    </div>`;
+  });
+  document.getElementById('followups-body').innerHTML=html;
+}
+
+function toggleFU(id){
+  const item=FOLLOWUPS.find(f=>f.id===id);
+  if(!item)return;
+  item.done=!item.done;
+  renderFollowups();
+}
+
+renderFollowups();
+
+// ── NEWS ──────────────────────────────────────────────────────────────────
+async function loadNews(feedKey){
+  const btn=document.getElementById(feedKey+'-btn');
+  const body=document.getElementById(feedKey+'-news-body');
+  btn.disabled=true;
+  btn.textContent='Loading…';
+  body.innerHTML='<div class="news-empty">Fetching latest stories…</div>';
+
+  const sources=NEWS_SOURCES[feedKey]||[];
+  const allItems=[];
+
+  await Promise.all(sources.map(async src=>{
+    try{
+      const res=await fetch(RSS_PROXY+encodeURIComponent(src.url)+'&count=3');
+      const data=await res.json();
+      if(data.status==='ok'&&data.items){
+        data.items.slice(0,3).forEach(item=>{
+          allItems.push({
+            title:item.title,
+            summary:item.description?item.description.replace(/<[^>]+>/g,'').slice(0,160).trim()+'…':'',
+            source:src.name,
+            pubDate:item.pubDate,
+            link:item.link,
+          });
+        });
+      }
+    }catch(e){}
+  }));
+
+  allItems.sort((a,b)=>new Date(b.pubDate)-new Date(a.pubDate));
+  const top=allItems.slice(0,5);
+
+  if(top.length===0){
+    body.innerHTML='<div class="news-empty">No stories found — try again shortly</div>';
+  } else {
+    let html='';
+    top.forEach(item=>{
+      html+=`<div class="news-item">
+        <a href="${item.link}" target="_blank" class="news-title">${item.title}</a>
+        <div class="news-summary">${item.summary}</div>
+        <div class="news-source">— ${item.source}</div>
+      </div>`;
+    });
+    body.innerHTML=html;
+  }
+
+  btn.disabled=false;
+  btn.textContent='↻ Refresh';
+}
+
+// ── IPO TABLE ─────────────────────────────────────────────────────────────
+function renderIPO(){
+  let html=`<div class="ipo-legend">`;
+  Object.entries(VERDICT_STYLE).forEach(([v,s])=>{
+    html+=`<div style="display:flex;align-items:center;gap:5px">
+      <div class="ipo-dot" style="background:${s.color}"></div>
+      <span class="ipo-leg-label">${v}</span>
+    </div>`;
+  });
+  html+=`<span class="ipo-hint">· Tap row for my take</span></div>`;
+
+  IPOS.forEach((ipo,i)=>{
+    const vs=VERDICT_STYLE[ipo.verdict];
+    html+=`<div class="ipo-row" onclick="toggleIPO(${i})">
+      <div class="ipo-top">
+        <div class="ipo-verdict" style="background:${vs.bg};color:${vs.color};border:1px solid ${vs.border}">${ipo.verdict}</div>
+        <div class="ipo-info">
+          <div class="ipo-name-row">
+            <span class="ipo-name">${ipo.name}</span>
+            <span class="ipo-window">${ipo.window}</span>
+          </div>
+          <div class="ipo-sub-row">
+            <span class="ipo-sector">${ipo.sector}</span>
+            <span class="ipo-val">${ipo.val}</span>
+          </div>
+        </div>
+        <span class="ipo-arrow" id="ipo-arrow-${i}">▼</span>
+      </div>
+      <div class="ipo-take" id="ipo-take-${i}" style="display:none;border-left:2px solid ${vs.color}">💬 ${ipo.take}</div>
+    </div>`;
+  });
+
+  html+=`<div class="ipo-disclaimer">
+    ⚠️ <strong style="color:#f59e0b">Disclaimer:</strong> Not financial advice. IPO timing and valuations shift. Always consult a financial advisor before investing.
+  </div>`;
+
+  document.getElementById('ipo-body').innerHTML=html;
+}
+
+function toggleIPO(i){
+  const take=document.getElementById('ipo-take-'+i);
+  const arrow=document.getElementById('ipo-arrow-'+i);
+  const open=take.style.display==='block';
+  take.style.display=open?'none':'block';
+  arrow.textContent=open?'▼':'▲';
+}
+
+renderIPO();
 </script>
 
 </body>
