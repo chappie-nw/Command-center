@@ -1,23 +1,20 @@
 // GET /api/calendar?days=120
 // Reads one or more Google Calendar "secret iCal" feeds (GCAL_ICS_URLS) and
 // returns expanded events (recurrences included) from yesterday onward.
-import ical from 'node-ical';
-import {checkPasscode, fetchText} from './_lib.js';
+import {calendarEnv, checkPasscode, fetchText, parseSources} from './_lib.js';
 
-export function parseSources(raw = '') {
-  return raw.split(/[,\n]/).map(s => s.trim()).filter(Boolean).map((s, i) => {
-    const bar = s.indexOf('|');
-    const hasLabel = bar > 0 && !/^[a-z]+:\/\//i.test(s.slice(0, bar));
-    const name = hasLabel ? s.slice(0, bar).trim() : `Calendar ${i + 1}`;
-    const url = (hasLabel ? s.slice(bar + 1) : s).trim().replace(/^webcal:\/\//i, 'https://');
-    return {name, url};
-  });
-}
+export {parseSources};
+
+// node-ical is loaded on demand so a load failure comes back as a readable
+// error (after the passcode check) instead of crashing the whole function.
+let ical;
+const loadIcal = async () => (ical ||= (await import('node-ical')).default);
 
 const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const text = v => (v && typeof v === 'object' ? v.val : v) || '';
 
-export function expandCalendar(icsText, calName, from, to) {
+export async function expandCalendar(icsText, calName, from, to) {
+  await loadIcal();
   const data = ical.sync.parseICS(icsText);
   const out = [];
   for (const ev of Object.values(data)) {
@@ -54,9 +51,14 @@ export function expandCalendar(icsText, calName, from, to) {
 export default async function handler(req, res) {
   if (!checkPasscode(req, res)) return;
   res.setHeader('Cache-Control', 'private, no-store');
-  const sources = parseSources(process.env.GCAL_ICS_URLS || process.env.GCAL_ICS_URL);
+  const sources = parseSources(calendarEnv());
   if (!sources.length) {
     return res.status(200).json({configured: false, events: [], errors: []});
+  }
+  try {
+    await loadIcal();
+  } catch (err) {
+    return res.status(500).json({configured: true, events: [], errors: [`calendar library failed to load: ${err.message}`]});
   }
   const days = Math.min(Math.max(parseInt(req.query?.days, 10) || 120, 1), 366);
   const from = new Date(Date.now() - 36 * 3600e3);
@@ -64,7 +66,7 @@ export default async function handler(req, res) {
   const errors = [];
   const results = await Promise.all(sources.map(async s => {
     try {
-      return expandCalendar(await fetchText(s.url, {timeout: 9000}), s.name, from, to);
+      return await expandCalendar(await fetchText(s.url, {timeout: 9000}), s.name, from, to);
     } catch (err) {
       errors.push(`${s.name}: ${err.message}`);
       return [];

@@ -35,9 +35,10 @@ test('parseSources handles labels, webcal and bare URLs', () => {
     {name: 'Personal', url: 'https://a.com/x.ics'},
     {name: 'Calendar 2', url: 'https://b.com/y.ics'},
   ]);
+  assert.deepEqual(parseSources(' "https://c.com/z.ics" '), [{name: 'Calendar 1', url: 'https://c.com/z.ics'}]);
 });
 
-test('expandCalendar expands recurrences across DST and keeps all-day dates', () => {
+test('expandCalendar expands recurrences across DST and keeps all-day dates', async () => {
   const ics = `BEGIN:VCALENDAR
 VERSION:2.0
 BEGIN:VEVENT
@@ -62,7 +63,7 @@ DTEND:20261028T160000Z
 SUMMARY:Cancelled thing
 END:VEVENT
 END:VCALENDAR`.replace(/\n/g, '\r\n');
-  const ev = expandCalendar(ics, 'Personal', new Date('2026-10-28T00:00:00Z'), new Date('2026-11-04T00:00:00Z'));
+  const ev = await expandCalendar(ics, 'Personal', new Date('2026-10-28T00:00:00Z'), new Date('2026-11-04T00:00:00Z'));
   const bp = ev.filter(e => e.title === 'Take BP').map(e => e.start);
   assert.ok(bp.includes('2026-10-29T02:30:00.000Z'), 'EDT occurrence');
   assert.ok(bp.includes('2026-11-03T03:30:00.000Z'), 'EST occurrence keeps 10:30 PM local');
@@ -81,4 +82,11 @@ test('mapNasdaq normalizes upcoming, priced and filed rows', () => {
   assert.equal(rows.length, 3);
   assert.deepEqual([rows[0].date, rows[0].value, rows[0].status], ['2026-11-05', 250000000, 'expected']);
   assert.equal(rows[2].status, 'filed');
+});
+
+test('health flags public or malformed calendar addresses', async () => {
+  const {checkCalendarUrl} = await import('../api/health.js');
+  assert.equal(checkCalendarUrl('https://calendar.google.com/calendar/ical/a%40gmail.com/private-0a1b2c/basic.ics'), null);
+  assert.match(checkCalendarUrl('https://calendar.google.com/calendar/ical/a%40gmail.com/public/basic.ics'), /PUBLIC/);
+  assert.match(checkCalendarUrl('calendar.google.com/x.ics'), /https/);
 });

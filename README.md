@@ -37,8 +37,8 @@ After adding or changing any of them, open **Deployments**, tap **⋯** on the n
 
 Your Vercel site is on the public internet. A passcode keeps strangers out of your calendar and to-do list.
 
-- Add a variable named **`DASHBOARD_PASSCODE`** set to anything you'll remember.
-- The iPad asks for it once and then remembers it. To change it later, tap **Change passcode** at the bottom of the page.
+- Add a variable named **`DASHBOARD_PASSCODE`** set to anything you'll remember. `DASHBOARD_PASSKEY` also works.
+- The page shows a passcode box once, and the iPad remembers it afterwards. To change it later, tap **Change passcode** at the bottom of the page.
 
 ### 3. Sync reminders across devices (optional)
 
@@ -60,6 +60,27 @@ Open the site in Safari → tap the **Share** button → **Add to Home Screen**.
 
 ---
 
+## Check that it's working
+
+1. **Open `https://<your-site>.vercel.app/api/health`** in Safari. You should see a short block of text that includes:
+   - `"ok":true`, which means the server part is running.
+   - `"commit":"…"`, which should match the newest commit on GitHub `main`.
+   - `"calendar":{"configured":true,"count":1,"problems":[]}`, which means it found your calendar address.
+   - `"calendarLibrary":"ok"` and `"passcodeRequired":true`.
+2. **Open the site itself.** A gold **🔒 Enter your Command Center passcode** box appears at the top. Enter your passcode and tap **Unlock**. The calendar fills in, and committee events appear.
+3. At the bottom of the page, tap **System check**. Every line should be ✅ except the optional ones. The footer also shows `build …`, the same code as in step 1.
+
+## Troubleshooting
+
+| What you see | What it means | Fix |
+|---|---|---|
+| `/api/health` shows a **404 page** | Vercel is serving only the web page, not the server part. Usually the Vercel project isn't building from this GitHub repo. | Vercel → project → **Settings → Git**: the connected repository should be `chappie-nw/Command-center` and the production branch `main`. Under **Settings → Build & Deployment**, **Root Directory** should be empty. Then redeploy. |
+| `"commit"` doesn't match GitHub, or is `null` | Vercel deployed an old upload instead of the GitHub code. | Same as above: connect the repo, then redeploy. |
+| `"configured":false` | The server can't see `GCAL_ICS_URLS`. | Check the spelling, that **Production** is ticked, and that you redeployed after saving. |
+| `"problems"` mentions **PUBLIC** | You copied the public address. | Copy **Secret address in iCal format** instead. |
+| `"unrecognizedSettings"` lists a name | A setting has a typo (for example a trailing space). | Delete it and re-add it with the exact name. |
+| Box says **"That passcode didn't work"** | What you typed doesn't match `DASHBOARD_PASSCODE`. | Re-check it in Vercel. Capital letters matter. |
+
 ## Customizing
 
 These live near the top of the `<script>` in `index.html`:
@@ -76,6 +97,6 @@ These live near the top of the `<script>` in `index.html`:
 ## For developers
 
 - `index.html` is the page, plain HTML/JS with no build step.
-- `api/*.js` are Vercel serverless functions: `calendar`, `news`, `ipos`, `store`.
+- `api/*.js` are Vercel serverless functions: `calendar`, `news`, `ipos`, `store`, `health`. `vercel.json` pins the project to plain static files plus functions, so Vercel doesn't try to apply a framework.
 - `npm test` runs the parser and calendar tests.
 - `.env.example` lists every setting.

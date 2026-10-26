@@ -5,12 +5,15 @@ import {timingSafeEqual} from 'node:crypto';
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15';
 
 // ── AUTH ────────────────────────────────────────────────────────────────────
+// DASHBOARD_PASSKEY is accepted too, since that's an easy name to reach for.
+export const passcodeEnv = () => (process.env.DASHBOARD_PASSCODE || process.env.DASHBOARD_PASSKEY || '').trim();
+
 // When DASHBOARD_PASSCODE is set, private endpoints (calendar, store) require
 // the same value in the x-dashboard-passcode header. Returns true if allowed.
 export function checkPasscode(req, res) {
-  const expected = process.env.DASHBOARD_PASSCODE;
+  const expected = passcodeEnv();
   if (!expected) return true;
-  const got = String(req.headers['x-dashboard-passcode'] || '');
+  const got = String(req.headers['x-dashboard-passcode'] || '').trim();
   const a = Buffer.from(got);
   const b = Buffer.from(expected);
   if (a.length === b.length && timingSafeEqual(a, b)) return true;
@@ -18,6 +21,19 @@ export function checkPasscode(req, res) {
   res.status(401).json({error: 'passcode required'});
   return false;
 }
+
+// ── CALENDAR SOURCES ────────────────────────────────────────────────────────
+// GCAL_ICS_URLS: comma- or newline-separated, each optionally "Label|url".
+export function parseSources(raw = '') {
+  return raw.split(/[,\n]/).map(s => s.trim().replace(/^["']|["']$/g, '').trim()).filter(Boolean).map((s, i) => {
+    const bar = s.indexOf('|');
+    const hasLabel = bar > 0 && !/^[a-z]+:\/\//i.test(s.slice(0, bar));
+    const name = hasLabel ? s.slice(0, bar).trim() : `Calendar ${i + 1}`;
+    const url = (hasLabel ? s.slice(bar + 1) : s).trim().replace(/^webcal:\/\//i, 'https://');
+    return {name, url};
+  });
+}
+export const calendarEnv = () => process.env.GCAL_ICS_URLS || process.env.GCAL_ICS_URL || '';
 
 // ── FETCH ───────────────────────────────────────────────────────────────────
 export async function fetchText(url, {timeout = 8000, headers = {}} = {}) {

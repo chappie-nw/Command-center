@@ -232,6 +232,15 @@ input,select{font-family:inherit;font-size:16px} /* 16px stops iPad Safari zoomi
   border:1px solid rgba(245,158,11,0.1);font-size:10px;color:var(--faint);line-height:1.8;
 }
 
+.lock{margin-bottom:16px;border-color:rgba(245,158,11,0.45);background:rgba(245,158,11,0.08)}
+.lock-title{font-size:16px;font-weight:700;color:#fbbf24;margin-bottom:6px}
+.lock-sub{font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.5}
+.lock-sub.bad{color:#fca5a5}
+.lock input{flex:1 1 200px}
+.status-banner{margin-bottom:16px;border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.07);font-size:13px;line-height:1.6;color:#fecaca}
+.status-banner b{color:#fff}
+.syscheck{max-width:560px;margin:10px auto 0;text-align:left;font-size:12px;line-height:1.9;color:var(--muted);
+  background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-family:'IBM Plex Sans',sans-serif}
 .footer{text-align:center;margin-top:24px;font-size:10px;color:#334155;font-family:var(--mono);line-height:2}
 .footer button{background:none;border:none;color:var(--faint);text-decoration:underline;font-size:10px;font-family:var(--mono);padding:6px}
 </style>
@@ -253,6 +262,19 @@ input,select{font-family:inherit;font-size:16px} /* 16px stops iPad Safari zoomi
       </div>
     </div>
   </div>
+
+  <!-- PASSCODE (shown only when the server asks for it) -->
+  <form class="card lock" id="lock-card" onsubmit="submitPasscode(event)" style="display:none">
+    <div class="lock-title">🔒 Enter your Command Center passcode</div>
+    <div class="lock-sub" id="lock-msg">Your calendar, reminders and committee deadlines are locked until you do. This iPad remembers it afterwards.</div>
+    <div class="add-form" style="border:none;margin:0;padding:0">
+      <input type="password" id="lock-input" placeholder="Passcode" autocomplete="current-password" required/>
+      <button type="submit">Unlock</button>
+    </div>
+  </form>
+
+  <!-- SERVER STATUS (shown only when something's wrong) -->
+  <div class="card status-banner" id="status-banner" style="display:none"></div>
 
   <!-- TODAY AT A GLANCE -->
   <div class="card glance" style="margin-bottom:16px">
@@ -362,7 +384,9 @@ input,select{font-family:inherit;font-size:16px} /* 16px stops iPad Safari zoomi
   <div class="footer">
     <div id="footer-status"></div>
     <button onclick="refreshAll(true)">Refresh everything</button> ·
-    <button onclick="resetPasscode()">Change passcode</button>
+    <button onclick="resetPasscode()">Change passcode</button> ·
+    <button onclick="toggleSystemCheck()">System check</button>
+    <div class="syscheck" id="syscheck" style="display:none"></div>
   </div>
 </div>
 
@@ -460,26 +484,93 @@ function stamp(key, label){
 
 // ── API + PASSCODE ────────────────────────────────────────────────────────
 const getPasscode = () => lsGet('cc-passcode', '');
+// Private endpoints answer 401 until the right passcode is sent. Instead of a
+// browser pop-up (which home-screen apps can silently block) we show the
+// in-page lock card and wait for it.
 async function api(path, opts = {}){
-  const used = getPasscode();
-  const headers = {...(opts.headers || {})};
-  if (used) headers['x-dashboard-passcode'] = used;
-  const r = await fetch(path, {...opts, headers, cache:'no-store'});
-  if (r.status === 401 && !opts._retried){
-    // Another request may have already asked while this one was in flight.
-    if (getPasscode() === used){
-      const p = window.prompt('Enter your Command Center passcode');
-      if (!p) throw new Error('locked');
-      lsSet('cc-passcode', p.trim());
-    }
-    return api(path, {...opts, _retried:true});
+  for (;;){
+    const used = getPasscode();
+    const headers = {...(opts.headers || {})};
+    if (used) headers['x-dashboard-passcode'] = used;
+    const r = await fetch(path, {...opts, headers, cache:'no-store'});
+    if (r.status !== 401) return r;
+    // Another request may have unlocked while this one was in flight.
+    if (getPasscode() !== used) continue;
+    await askPasscode(used ? "That passcode didn't work — check it matches DASHBOARD_PASSCODE in Vercel exactly." : '');
   }
-  if (r.status === 401) throw new Error('locked');
-  return r;
+}
+let passcodeWaiter = null, passcodeResolve = null;
+function askPasscode(problem){
+  if (!passcodeWaiter){
+    passcodeWaiter = new Promise(r => passcodeResolve = r);
+    const msg = $('lock-msg');
+    if (problem){ msg.textContent = problem; msg.className = 'lock-sub bad'; }
+    $('lock-card').style.display = '';
+    $('lock-card').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+  return passcodeWaiter;
+}
+function submitPasscode(ev){
+  ev.preventDefault();
+  const p = $('lock-input').value.trim();
+  if (!p) return;
+  lsSet('cc-passcode', p);
+  $('lock-input').value = '';
+  $('lock-card').style.display = 'none';
+  const resolve = passcodeResolve;
+  passcodeWaiter = passcodeResolve = null;
+  resolve && resolve();
 }
 function resetPasscode(){
   lsSet('cc-passcode', '');
-  loadCalendar(); syncPull();
+  $('lock-msg').className = 'lock-sub';
+  $('lock-msg').textContent = 'Enter the passcode you set as DASHBOARD_PASSCODE in Vercel.';
+  askPasscode('').then(() => { loadCalendar(); syncPull(); });
+}
+
+// ── SERVER SELF-CHECK (/api/health) ───────────────────────────────────────
+let health = null, healthErr = null;
+async function loadHealth(){
+  try {
+    const r = await fetch('/api/health', {cache:'no-store'});
+    const type = r.headers.get('content-type') || '';
+    if (!r.ok || !type.includes('json')) throw new Error(r.status === 404 ? 'not found (404)' : 'HTTP ' + r.status);
+    health = await r.json(); healthErr = null;
+  } catch (err){ health = null; healthErr = err; }
+  renderStatusBanner(); renderFooter();
+  if (health?.passcodeRequired && !getPasscode()) askPasscode('');
+}
+function healthProblems(){
+  if (location.protocol === 'file:') return [];
+  if (!health) return [`The server part of the site isn't running — <b>/api/health</b> ${esc(healthErr?.message || 'failed')}. Vercel is only serving the page itself, so it can't read your settings. See <b>Troubleshooting</b> in the README.`];
+  const p = [];
+  if (!health.calendar.configured) p.push(`The server can't see a <b>GCAL_ICS_URLS</b> setting. Check the name is spelled exactly like that, that <b>Production</b> is ticked, and that you redeployed after saving it.`);
+  health.calendar.problems.forEach(x => p.push(`Calendar address problem: ${esc(x)}.`));
+  if (health.calendarLibrary !== 'ok') p.push(`The calendar reader didn't start: ${esc(health.calendarLibrary)}.`);
+  if (health.unrecognizedSettings.length) p.push(`These Vercel settings have names the site doesn't recognise (typo?): <b>${health.unrecognizedSettings.map(esc).join(', ')}</b>.`);
+  return p;
+}
+function renderStatusBanner(){
+  const p = healthProblems(), el = $('status-banner');
+  el.style.display = p.length ? '' : 'none';
+  el.innerHTML = p.length ? '⚠️ <b>Setup check</b><br/>' + p.join('<br/>') : '';
+}
+function toggleSystemCheck(){
+  const el = $('syscheck');
+  if (el.style.display !== 'none'){ el.style.display = 'none'; return; }
+  const yes = (ok, good, bad) => (ok ? '✅ ' + good : '❌ ' + bad);
+  el.innerHTML = !health
+    ? yes(false, '', `Server part not running (${esc(healthErr?.message || 'no answer')}).`)
+    : [
+        yes(true, `Server running · build <b>${esc(health.commit || 'unknown')}</b> · ${esc(health.environment)} · Node ${esc(health.node)}`),
+        yes(health.calendar.configured, `Calendar address found (${health.calendar.count})${health.calendar.problems.length ? ' — but ' + esc(health.calendar.problems.join('; ')) : ''}`, 'No GCAL_ICS_URLS setting found'),
+        yes(health.calendarLibrary === 'ok', 'Calendar reader loads', esc(health.calendarLibrary)),
+        yes(calStatus === 'ok', `Calendar loaded (${calEvents.length} events)`, `Calendar not loaded yet (${esc(calStatus === 'error' ? calError?.message || calError : calStatus)})`),
+        yes(health.passcodeRequired, 'Passcode required' + (getPasscode() ? ' · this iPad has one saved' : ''), 'No DASHBOARD_PASSCODE set — anyone with the link can see your calendar'),
+        yes(health.cloudSync, 'Cloud sync on', 'Cloud sync off (optional) — reminders stay on this device'),
+        yes(health.finnhub, 'Finnhub IPO key set', 'No Finnhub key (optional) — using Nasdaq'),
+      ].join('<br/>');
+  el.style.display = '';
 }
 function apiErrorHtml(err, what){
   if (err.message === 'locked') return `<div class="empty">🔒 ${what} is locked.<br/><b>Tap "Change passcode"</b> at the bottom to enter it.</div>`;
@@ -615,7 +706,11 @@ async function loadCalendar(){
   spin('cal', true);
   try {
     const r = await api('/api/calendar?days=180');
-    if (!r.ok) throw new Error('HTTP ' + r.status);
+    if (!r.ok){
+      let msg = 'HTTP ' + r.status;
+      try { const j = await r.json(); msg = (j.errors || []).join('; ') || j.error || msg; } catch {}
+      throw new Error(msg);
+    }
     const data = await r.json();
     if (!data.configured){ calStatus = 'unconfigured'; calEvents = []; }
     else {
@@ -1116,7 +1211,8 @@ function renderFooter(){
   const sync = syncMode === 'cloud' ? '☁️ Reminders & deadlines synced to the cloud'
     : syncMode === 'error' ? '⚠️ Cloud sync failed — saved on this device'
     : '📱 Reminders & deadlines saved on this device';
-  $('footer-status').textContent = `${sync} · Built with Claude · ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}`;
+  const build = health?.commit ? ` · build ${health.commit}` : '';
+  $('footer-status').textContent = `${sync}${build} · Built with Claude · ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}`;
 }
 function renderStateful(){ renderCommittees(); renderReminders(); renderFollowups(); renderGlance(); }
 function renderAll(){ renderCalendar(); renderStateful(); renderAI(); renderTravel(); renderIPO(); renderFooter(); }
@@ -1128,7 +1224,7 @@ function refreshAll(force){
   if (force || stale('ai', REFRESH_MIN.news)) loadNews('ai');
   if (force || stale('travel', REFRESH_MIN.news)) loadNews('travel');
   if (force || stale('ipo', REFRESH_MIN.ipo)) loadIPOs();
-  if (force) syncPull();
+  if (force){ loadHealth(); syncPull(); }
 }
 // Check every minute; also catch up immediately when the iPad wakes up.
 setInterval(() => { if (!document.hidden) refreshAll(false); }, 60e3);
