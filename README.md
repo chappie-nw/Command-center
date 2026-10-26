@@ -7,7 +7,7 @@ Chappie's command center: a one-page dashboard for the iPad, hosted on Vercel.
 - **Today at a glance:** weather, today's events, reminders due, your next committee item and open follow-ups.
 - **🔊 Morning briefing:** tap the button and the iPad reads your day out loud. Tap again to stop.
 - **Calendar:** this week, plus a 2-week horizon pulled live from Google Calendar.
-- **Committee deadlines:** NYE Gala 2027, AF STEM Aviation, and Achievement and Awards.
+- **Committee deadlines:** your calendar events for the next 30 days that mention NYE Gala, AF STEM Aviation, Aviation, ECSU, Achievement and Awards, Closeout, or chapter meeting. They're grouped by committee, with the soonest first, and you can also add deadlines by hand.
 - **Reminders & to-do:** your own list, with optional due dates.
 - **Follow-ups & actions:** built automatically from calendar items that look like tasks ("pay", "send", "due", "renew"…), committee deadlines in the next 14 days, and overdue reminders.
 - **AI news** and **Travel abroad:** U.S. State Department advisories plus travel headlines. Advisories for countries in your upcoming calendar events are pinned to the top.
@@ -64,7 +64,7 @@ Open the site in Safari → tap the **Share** button → **Add to Home Screen**.
 
 These live near the top of the `<script>` in `index.html`:
 
-- **`COMMITTEES`**: committee names, colors, and **keywords**. Any calendar event whose title or location contains a keyword (for example "gala" or "aviation") shows up in that committee's tracker automatically. You can also add deadlines by hand on the page.
+- **`COMMITTEES`**: committee names, colors, and **keywords**. Any calendar event in the next `COMMITTEE_DAYS` (30) days whose title or location contains a keyword shows up in that committee's tracker automatically. An event goes to the first committee it matches, so "Chapter business" only collects chapter meetings and closeouts that don't mention a specific committee.
 - **`IPO_WATCHLIST`**: your watchlist and notes.
 - **`REFRESH_MIN`**: how often each panel refreshes.
 

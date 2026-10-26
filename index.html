@@ -368,13 +368,17 @@ input,select{font-family:inherit;font-size:16px} /* 16px stops iPad Safari zoomi
 
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────────
-// Calendar events whose title or location contains one of a committee's
-// keywords show up automatically in that committee's deadline tracker.
+// Calendar events in the next COMMITTEE_DAYS whose title or location contains
+// one of a committee's keywords show up automatically in its tracker. An event
+// goes to the first committee it matches, so "Chapter business" (last) only
+// picks up chapter meetings and closeouts that aren't about a specific committee.
 const COMMITTEES = [
-  {id:'nye',    name:'NYE Gala 2027',          icon:'🥂', color:'#f59e0b', keywords:['gala','nye','new year']},
-  {id:'stem',   name:'AF STEM Aviation',       icon:'✈️', color:'#38bdf8', keywords:['stem','aviation']},
-  {id:'awards', name:'Achievement and Awards', icon:'🏆', color:'#a78bfa', keywords:['achievement','award','awards']},
+  {id:'nye',     name:'NYE Gala 2027',          icon:'🥂', color:'#f59e0b', keywords:['nye gala','nye','gala','new year']},
+  {id:'stem',    name:'AF STEM Aviation',       icon:'✈️', color:'#38bdf8', keywords:['af stem aviation','stem','aviation','ecsu']},
+  {id:'awards',  name:'Achievement and Awards', icon:'🏆', color:'#a78bfa', keywords:['achievement and awards','achievement','award','awards']},
+  {id:'chapter', name:'Chapter business',       icon:'🏛', color:'#10b981', keywords:['chapter meeting','closeout','close-out','close out']},
 ];
+const COMMITTEE_DAYS = 30;
 const REFRESH_MIN = {calendar:10, news:30, weather:30, ipo:360};
 
 const TYPE_COLOR = {
@@ -704,15 +708,17 @@ function switchTab(tab){
 }
 
 // ── COMMITTEES ────────────────────────────────────────────────────────────
+const keywordRe = c => c._re ||= new RegExp('\\b(' + c.keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\s+/g,'\\s+')).join('|') + ')\\b', 'i');
+// Which committee a calendar event belongs to (first match wins), or null.
+const committeeOf = e => COMMITTEES.find(c => keywordRe(c).test(e.title + ' ' + e.loc)) || null;
 function committeeItems(c){
-  const re = new RegExp('\\b(' + c.keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|') + ')\\b', 'i');
-  const manual = state.deadlines.filter(d => d.cmte === c.id).map(d => ({...d, kind:'manual'}));
-  const seen = new Set();
+  const manual = state.deadlines.filter(d => d.cmte === c.id).map(d => ({...d, kind:'manual', sortKey:d.date}));
+  const now = new Date(), until = addDays(startOfDay(), COMMITTEE_DAYS + 1);
   const fromCal = calEvents
-    .filter(e => e.en > startOfDay() && re.test(e.title + ' ' + e.loc))
-    .filter(e => !seen.has(e.title) && seen.add(e.title))   // next occurrence only
-    .map(e => ({id:e.id, title:e.title, date:ymd(e.s), time:e.allDay ? '' : fmtTime(e.s), kind:'cal', done:false}));
-  return [...manual, ...fromCal].sort((a,b) => (a.done - b.done) || a.date.localeCompare(b.date));
+    .filter(e => e.en > now && e.s < until && committeeOf(e) === c)
+    .map(e => ({id:e.id, title:e.title, date:ymd(e.s < startOfDay() ? startOfDay() : e.s), time:e.allDay ? '' : fmtTime(e.s),
+                kind:'cal', done:false, sortKey:e.allDay ? ymd(e.s) : e.s.toISOString()}));
+  return [...manual, ...fromCal].sort((a,b) => (a.done - b.done) || a.date.localeCompare(b.date) || a.sortKey.localeCompare(b.sortKey));
 }
 function nextCommitteeDeadline(){
   const all = COMMITTEES.flatMap(c => committeeItems(c).filter(i => !i.done).map(i => ({...i, c})));
@@ -720,8 +726,14 @@ function nextCommitteeDeadline(){
 }
 function renderCommittees(){
   let html = '';
-  COMMITTEES.forEach(c => {
-    const items = committeeItems(c);
+  if (calStatus === 'unconfigured') html += `<div class="note">📅 Your Google Calendar isn't connected yet, so only deadlines you add by hand appear here. Add <b>GCAL_ICS_URLS</b> in Vercel to pull committee events automatically.</div>`;
+  else if (calStatus === 'error') html += `<div class="note">⚠️ Couldn't reach your calendar${calError?.message === 'locked' ? ' — tap "Change passcode" at the bottom' : ''}. Showing deadlines you added by hand.</div>`;
+  else if (calStatus === 'ok') html += `<div class="stamp" style="margin-bottom:10px">📅 CALENDAR EVENTS · NEXT ${COMMITTEE_DAYS} DAYS · SOONEST FIRST</div>`;
+  // Committees with the soonest open item come first; empty ones drop to the bottom.
+  const groups = COMMITTEES.map(c => ({c, items:committeeItems(c)}))
+    .map(g => ({...g, next:(g.items.find(i => !i.done) || {}).sortKey || '\uffff'}))
+    .sort((a,b) => a.next.localeCompare(b.next));
+  groups.forEach(({c, items}) => {
     const manual = items.filter(i => i.kind === 'manual');
     const done = manual.filter(i => i.done).length;
     const pct = manual.length ? Math.round(done / manual.length * 100) : 0;
@@ -729,7 +741,7 @@ function renderCommittees(){
       <div class="cmte-hdr"><span>${c.icon}</span><span class="cmte-name">${esc(c.name)}</span>
         <span class="cmte-progress">${manual.length ? `${done}/${manual.length} done` : ''}</span></div>
       ${manual.length ? `<div class="bar"><div style="width:${pct}%"></div></div>` : ''}`;
-    if (!items.length) html += `<div class="empty" style="padding:10px 0">No deadlines yet — add one below.</div>`;
+    if (!items.some(i => !i.done)) html += `<div class="empty" style="padding:10px 0">${calStatus === 'ok' ? `Nothing on your calendar in the next ${COMMITTEE_DAYS} days.` : 'Nothing scheduled yet.'}</div>`;
     const doneShown = items.filter(i => i.done).slice(-3);
     items.filter(i => !i.done).concat(doneShown).forEach(i => {
       const days = daysUntil(i.date);
@@ -1045,7 +1057,9 @@ function briefingSentences(){
 
   const soon = COMMITTEES.flatMap(c => committeeItems(c).filter(i => !i.done && daysUntil(i.date) <= 14).map(i => ({...i, c})))
     .sort((a,b) => a.date.localeCompare(b.date));
-  if (soon.length) s.push(`Coming up for your committees in the next two weeks: ${listJoin(soon.slice(0, 5).map(i => `${i.c.name}, ${spoken(i.title)}, ${i.kind === 'cal' ? spokenWhen(daysUntil(i.date)) : spokenDays(daysUntil(i.date))}`))}.`);
+  const seenBrief = new Set();
+  const soonUnique = soon.filter(i => !seenBrief.has(i.title) && seenBrief.add(i.title));
+  if (soonUnique.length) s.push(`Coming up for your committees in the next two weeks: ${listJoin(soonUnique.slice(0, 5).map(i => `${i.c.name}, ${spoken(i.title)}, ${i.kind === 'cal' ? spokenWhen(daysUntil(i.date)) : spokenDays(daysUntil(i.date))}`))}.`);
   else s.push('Nothing due for your committees in the next two weeks.');
 
   const fu = followups().filter(f => !f.done && f.source === 'CALENDAR' && f.urgency === 'HIGH');
