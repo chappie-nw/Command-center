@@ -1,391 +1,408 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Command Center"/>
+<meta name="theme-color" content="#020617"/>
 <title>⚡ Command Center</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
+:root{
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --bg:#020617;--card:rgba(15,23,42,0.9);--line:rgba(255,255,255,0.07);
+  --text:#e2e8f0;--muted:#94a3b8;--dim:#64748b;--faint:#475569;
+  --amber:#f59e0b;--violet:#a78bfa;--red:#ef4444;--green:#10b981;--sky:#38bdf8;
+}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 body{
-  background:#020617;
-  color:#e2e8f0;
-  font-family:'IBM Plex Sans',sans-serif;
+  background:var(--bg);color:var(--text);
+  font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;
   min-height:100vh;
-  padding:20px 16px 48px;
+  padding:max(20px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 48px max(16px,env(safe-area-inset-left));
   background-image:radial-gradient(circle at 1px 1px,rgba(255,255,255,0.018) 1px,transparent 0);
   background-size:30px 30px;
+  -webkit-tap-highlight-color:transparent;
 }
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:#1e293b;border-radius:4px}
-button{font-family:inherit;cursor:pointer}
-a{text-decoration:none}
+button{font-family:inherit;cursor:pointer;touch-action:manipulation}
+a{text-decoration:none;color:inherit}
+input,select{font-family:inherit;font-size:16px} /* 16px stops iPad Safari zooming on focus */
 
 /* ── LAYOUT ── */
 .wrap{max-width:1380px;margin:0 auto}
-.row1{display:grid;grid-template-columns:300px 1fr;gap:16px;margin-bottom:16px}
-.row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
-.row3{margin-bottom:24px}
-@media(max-width:900px){
-.row1,.row2{grid-template-columns:1fr}
-}
+.row{display:grid;gap:16px;margin-bottom:16px}
+.row-wx{grid-template-columns:300px 1fr}
+.row-3{grid-template-columns:repeat(3,1fr)}
+.row-2{grid-template-columns:1fr 1fr}
+@media(max-width:1100px){.row-3{grid-template-columns:1fr 1fr}.row-3>.card:first-child{grid-column:1/-1}}
+@media(max-width:760px){.row-wx,.row-3,.row-2{grid-template-columns:1fr}.row-3>.card:first-child{grid-column:auto}}
 
 /* ── HEADER ── */
 .hdr{
-display:flex;justify-content:space-between;align-items:center;
-padding:18px 24px;margin-bottom:20px;
-background:rgba(15,23,42,0.9);border-radius:16px;
-border:1px solid rgba(245,158,11,0.2);
+  display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:18px 24px;margin-bottom:16px;
+  background:var(--card);border-radius:16px;border:1px solid rgba(245,158,11,0.2);
 }
-.hdr-title{font-size:22px;font-weight:800;color:#f1f5f9;letter-spacing:-0.5px;font-family:‘IBM Plex Mono’,monospace}
-.hdr-date{font-size:11px;color:#475569;margin-top:3px}
-.hdr-time{font-size:26px;font-weight:700;color:#f59e0b;letter-spacing:2px;font-family:‘IBM Plex Mono’,monospace;text-align:right}
-.hdr-loc{font-size:10px;color:#475569;margin-top:3px;text-align:right}
+.hdr-title{font-size:22px;font-weight:800;color:#f1f5f9;letter-spacing:-0.5px;font-family:var(--mono)}
+.hdr-date{font-size:12px;color:var(--faint);margin-top:3px}
+.hdr-right{display:flex;align-items:center;gap:18px}
+.hdr-time{font-size:26px;font-weight:700;color:var(--amber);letter-spacing:2px;font-family:var(--mono);text-align:right}
+.hdr-loc{font-size:10px;color:var(--faint);margin-top:3px;text-align:right}
+.brief-btn{
+  display:flex;align-items:center;gap:8px;min-height:44px;
+  background:linear-gradient(135deg,rgba(245,158,11,0.25),rgba(245,158,11,0.1));
+  border:1px solid rgba(245,158,11,0.45);color:#fbbf24;border-radius:12px;
+  padding:8px 16px;font-size:13px;font-weight:700;font-family:var(--mono);
+}
+.brief-btn.playing{background:rgba(239,68,68,0.18);border-color:rgba(239,68,68,0.5);color:#fca5a5}
 
 /* ── CARD ── */
-.card{
-background:rgba(15,23,42,0.9);
-border:1px solid rgba(255,255,255,0.07);
-border-radius:16px;padding:18px 20px;
-}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;min-width:0}
 .card-hdr{
-display:flex;align-items:center;gap:8px;
-padding-bottom:12px;margin-bottom:14px;
-border-bottom:1px solid rgba(255,255,255,0.06);
+  display:flex;align-items:center;gap:8px;
+  padding-bottom:12px;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.06);
 }
 .card-icon{
-width:30px;height:30px;border-radius:8px;flex-shrink:0;
-display:flex;align-items:center;justify-content:center;font-size:15px;
+  width:30px;height:30px;border-radius:8px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:15px;
 }
-.card-title{font-size:13px;font-weight:700;color:#e2e8f0;letter-spacing:0.3px;font-family:‘IBM Plex Mono’,monospace;flex:1}
-.card-body{overflow-y:auto;max-height:440px;padding-right:2px}
+.card-title{font-size:13px;font-weight:700;color:var(--text);letter-spacing:0.3px;font-family:var(--mono);flex:1;min-width:0}
+.card-body{overflow-y:auto;max-height:440px;padding-right:2px;-webkit-overflow-scrolling:touch}
+.stamp{font-size:9px;color:#334155;font-family:var(--mono);white-space:nowrap}
+.mini-btn{
+  display:flex;align-items:center;gap:6px;min-height:34px;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);
+  color:var(--muted);border-radius:8px;padding:4px 12px;font-size:11px;font-family:var(--mono);font-weight:700;
+}
+.mini-btn:disabled{opacity:0.5}
+.spinning{display:inline-block;animation:spin 0.8s linear infinite}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.empty{color:var(--faint);font-size:12px;text-align:center;padding:22px 8px;line-height:1.6}
+.empty b{color:var(--muted)}
+.note{font-size:11px;color:var(--faint);line-height:1.6;padding:10px 12px;border-radius:8px;background:rgba(255,255,255,0.03);margin-bottom:10px}
+.section-label{font-size:10px;color:var(--faint);margin:4px 0 10px;letter-spacing:1px;font-weight:700;font-family:var(--mono)}
+
+/* ── TODAY AT A GLANCE ── */
+.glance{background:linear-gradient(135deg,rgba(245,158,11,0.07),rgba(139,92,246,0.06)),var(--card);border-color:rgba(245,158,11,0.18)}
+.glance-greet{font-size:17px;font-weight:600;color:#f1f5f9;margin-bottom:14px}
+.glance-greet span{color:var(--amber)}
+.tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+@media(max-width:1100px){.tiles{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.tiles{grid-template-columns:1fr 1fr}}
+.tile{
+  background:rgba(2,6,23,0.55);border:1px solid rgba(255,255,255,0.06);border-radius:12px;
+  padding:12px 14px;min-height:96px;display:flex;flex-direction:column;gap:4px;min-width:0;
+}
+.tile-label{font-size:9px;font-weight:700;letter-spacing:1px;color:var(--dim);font-family:var(--mono)}
+.tile-big{font-size:22px;font-weight:700;color:#f1f5f9;font-family:var(--mono);line-height:1.15}
+.tile-sub{font-size:11px;color:var(--muted);line-height:1.45;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.tile-sub.warn{color:#fca5a5}
+.transcript{
+  display:none;margin-top:14px;padding:12px 14px;border-radius:10px;
+  background:rgba(2,6,23,0.6);border:1px solid rgba(245,158,11,0.15);
+  font-size:13px;line-height:1.75;color:var(--muted);
+}
+.transcript.show{display:block}
+.transcript .now{color:#fde68a;background:rgba(245,158,11,0.12);border-radius:4px}
 
 /* ── WEATHER ── */
 .wx-current{display:flex;align-items:center;gap:14px;margin-bottom:14px}
-.wx-temp{font-size:30px;font-weight:700;color:#f1f5f9;line-height:1;font-family:‘IBM Plex Mono’,monospace}
-.wx-desc{font-size:12px;color:#94a3b8;margin-top:3px}
-.wx-loc{font-size:11px;color:#f59e0b;margin-top:2px}
+.wx-temp{font-size:30px;font-weight:700;color:#f1f5f9;line-height:1;font-family:var(--mono)}
+.wx-desc{font-size:12px;color:var(--muted);margin-top:3px}
+.wx-loc{font-size:11px;color:var(--amber);margin-top:2px}
 .wx-days{display:flex;gap:6px}
-.wx-day{
-flex:1;background:rgba(255,255,255,0.04);border-radius:8px;
-padding:7px 4px;text-align:center;border:1px solid rgba(255,255,255,0.06);
-}
-.wx-day-label{font-size:9px;color:#64748b;margin-bottom:2px;font-weight:700;font-family:‘IBM Plex Mono’,monospace}
+.wx-day{flex:1;background:rgba(255,255,255,0.04);border-radius:8px;padding:7px 4px;text-align:center;border:1px solid rgba(255,255,255,0.06)}
+.wx-day-label{font-size:9px;color:var(--dim);margin-bottom:2px;font-weight:700;font-family:var(--mono)}
 .wx-day-icon{font-size:18px}
 .wx-day-hi{font-size:12px;color:#f1f5f9;font-weight:600}
-.wx-day-lo{font-size:10px;color:#64748b}
+.wx-day-lo{font-size:10px;color:var(--dim)}
 
-/* ── CALENDAR TABS ── */
-.cal-tabs{display:flex;gap:6px;margin-bottom:14px}
-.cal-tab{
-padding:5px 14px;border-radius:7px;font-size:11px;font-family:‘IBM Plex Mono’,monospace;
-border:1px solid rgba(255,255,255,0.07);color:#64748b;background:rgba(255,255,255,0.03);
-font-weight:400;transition:all 0.2s;
+/* ── CALENDAR ── */
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.tab{
+  min-height:36px;padding:6px 14px;border-radius:8px;font-size:11px;font-family:var(--mono);
+  border:1px solid var(--line);color:var(--dim);background:rgba(255,255,255,0.03);font-weight:400;
 }
-.cal-tab.active{
-background:rgba(139,92,246,0.2);border-color:rgba(139,92,246,0.5);
-color:#a78bfa;font-weight:700;
-}
-.cal-refresh{
-display:flex;align-items:center;gap:6px;
-background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.3);
-color:#a78bfa;border-radius:7px;padding:4px 10px;font-size:11px;
-font-family:‘IBM Plex Mono’,monospace;font-weight:700;
-}
-.cal-refresh:disabled{opacity:0.5;cursor:not-allowed}
-.spin{display:inline-block}
-.spinning{animation:spin 0.8s linear infinite}
-@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-.cal-sync{font-size:9px;color:#334155;font-family:‘IBM Plex Mono’,monospace}
-.cal-syncing{
-text-align:center;padding:10px;margin-bottom:10px;
-background:rgba(139,92,246,0.06);border-radius:8px;
-border:1px solid rgba(139,92,246,0.15);
-font-size:11px;color:#a78bfa;font-family:‘IBM Plex Mono’,monospace;
-}
-
-/* ── DAY BLOCK ── */
+.tab.active{background:rgba(139,92,246,0.2);border-color:rgba(139,92,246,0.5);color:var(--violet);font-weight:700}
 .day-block{margin-bottom:16px}
-.day-label{
-display:flex;align-items:baseline;gap:8px;margin-bottom:6px;
-}
-.day-name{
-font-size:10px;font-weight:800;letter-spacing:1px;
-font-family:‘IBM Plex Mono’,monospace;color:#475569;
-}
-.day-name.today{color:#f59e0b}
+.day-label{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
+.day-name{font-size:10px;font-weight:800;letter-spacing:1px;font-family:var(--mono);color:var(--faint)}
+.day-name.today{color:var(--amber)}
 .day-date{font-size:11px;color:#334155}
-.event-row{
-display:flex;align-items:flex-start;gap:8px;
-padding:7px 10px;border-radius:8px;margin-bottom:4px;
-background:rgba(255,255,255,0.025);
-}
-.event-time{font-size:10px;color:#475569;min-width:56px;padding-top:1px;font-family:‘IBM Plex Mono’,monospace;flex-shrink:0}
-.event-title{font-size:12px;color:#e2e8f0;font-weight:500;line-height:1.4}
-.event-loc{font-size:11px;color:#64748b;margin-top:2px}
-.event-note{font-size:10px;color:#8b5cf6;margin-top:2px}
-
-/* ── HORIZON ── */
-.hz-label{font-size:10px;color:#475569;margin-bottom:14px;letter-spacing:1px;font-weight:700;font-family:‘IBM Plex Mono’,monospace}
+.event-row{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:8px;margin-bottom:4px;background:rgba(255,255,255,0.025)}
+.event-row.past{opacity:0.4}
+.event-time{font-size:10px;color:var(--faint);min-width:58px;padding-top:2px;font-family:var(--mono);flex-shrink:0}
+.event-title{font-size:13px;color:var(--text);font-weight:500;line-height:1.4}
+.event-loc{font-size:11px;color:var(--dim);margin-top:2px;word-break:break-word}
+.event-cal{font-size:9px;color:#334155;margin-left:auto;font-family:var(--mono);flex-shrink:0;padding-top:2px}
 .hz-item{padding:10px 14px;border-radius:10px;margin-bottom:10px;background:rgba(255,255,255,0.03)}
 .hz-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
-.hz-title{font-size:13px;color:#e2e8f0;font-weight:600}
-.hz-date{font-size:10px;color:#f59e0b;font-weight:700;flex-shrink:0;font-family:‘IBM Plex Mono’,monospace}
-.hz-detail{font-size:11px;color:#64748b;margin-top:4px}
+.hz-title{font-size:13px;color:var(--text);font-weight:600}
+.hz-date{font-size:10px;color:var(--amber);font-weight:700;flex-shrink:0;font-family:var(--mono)}
+.hz-detail{font-size:11px;color:var(--dim);margin-top:4px}
 
-/* ── FOLLOW-UPS ── */
-.fu-legend{display:flex;gap:14px;align-items:center;margin-bottom:12px}
-.fu-leg-item{display:flex;align-items:center;gap:4px;font-size:9px;color:#475569;font-family:‘IBM Plex Mono’,monospace}
-.fu-row{
-display:flex;align-items:flex-start;gap:8px;
-padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);
-cursor:pointer;transition:opacity 0.2s;
+/* ── CHECK ROWS (follow-ups, reminders, deadlines) ── */
+.check-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);transition:opacity 0.2s}
+.check-row.done{opacity:0.38}
+.check-row.done .check-text{text-decoration:line-through}
+.check{
+  width:26px;height:26px;border-radius:7px;flex-shrink:0;
+  border:2px solid #334155;background:transparent;color:#fff;font-size:13px;
+  display:flex;align-items:center;justify-content:center;transition:all 0.2s;
 }
-.fu-row.done{opacity:0.35}
-.fu-check{
-width:17px;height:17px;border-radius:4px;flex-shrink:0;margin-top:2px;
-border:2px solid #334155;background:transparent;
-display:flex;align-items:center;justify-content:center;transition:all 0.2s;
+.check.checked{border-color:var(--green);background:var(--green)}
+.check.cal{border-style:dashed;cursor:default}
+.check-main{flex:1;min-width:0;padding-top:3px}
+.check-text{font-size:13px;color:var(--text);line-height:1.45;word-break:break-word}
+.check-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;align-items:center}
+.del{
+  background:none;border:none;color:#334155;font-size:16px;width:34px;height:34px;flex-shrink:0;border-radius:8px;
 }
-.fu-check.checked{border-color:#10b981;background:#10b981}
-.fu-check-mark{color:#fff;font-size:10px;line-height:1}
-.fu-text{flex:1;font-size:12px;color:#e2e8f0;line-height:1.5}
-.fu-row.done .fu-text{text-decoration:line-through}
+.del:active{background:rgba(239,68,68,0.15);color:var(--red)}
 .tag{
-font-size:9px;font-weight:700;flex-shrink:0;border-radius:4px;
-padding:2px 6px;display:flex;align-items:center;gap:3px;
-font-family:‘IBM Plex Mono’,monospace;
+  font-size:9px;font-weight:700;border-radius:4px;padding:2px 6px;
+  display:inline-flex;align-items:center;gap:3px;font-family:var(--mono);white-space:nowrap;
 }
+.add-form{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06)}
+.add-form input,.add-form select{
+  min-height:42px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);
+  background:rgba(2,6,23,0.7);color:var(--text);padding:8px 10px;min-width:0;
+}
+.add-form input[type=text]{flex:1 1 180px}
+.add-form input[type=date]{flex:0 1 150px;color-scheme:dark}
+.add-form select{flex:1 1 150px}
+.add-form button{
+  min-height:42px;padding:8px 16px;border-radius:9px;font-weight:700;font-size:13px;
+  background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);color:#34d399;
+}
+
+/* ── COMMITTEES ── */
+.cmte{margin-bottom:14px;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,0.025);border-left:3px solid var(--c)}
+.cmte-hdr{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.cmte-name{font-size:13px;font-weight:700;color:#f1f5f9;flex:1}
+.cmte-progress{font-size:10px;color:var(--dim);font-family:var(--mono)}
+.bar{height:4px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden;margin:6px 0 4px}
+.bar>div{height:100%;background:var(--c);border-radius:4px}
+.cmte .check-row:last-child{border-bottom:none}
 
 /* ── NEWS ── */
-.news-btn{
-background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);
-color:#f59e0b;border-radius:7px;padding:5px 14px;font-size:11px;
-font-family:‘IBM Plex Mono’,monospace;float:right;margin-bottom:12px;
-}
-.news-btn:disabled{opacity:0.5;cursor:not-allowed}
-.news-empty{color:#334155;font-size:12px;text-align:center;padding:24px 0;clear:both}
-.news-item{border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:10px;margin-bottom:10px;clear:both}
-.news-title{font-size:13px;color:#e2e8f0;font-weight:600;line-height:1.4;margin-bottom:4px;display:block}
-.news-title:hover{color:#f59e0b}
-.news-summary{font-size:11px;color:#64748b;line-height:1.6}
-.news-source{font-size:10px;color:#f59e0b;margin-top:3px}
+.news-item{border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:10px;margin-bottom:10px}
+.news-title{font-size:13px;color:var(--text);font-weight:600;line-height:1.4;margin-bottom:4px;display:block}
+.news-title:hover,.news-title:active{color:var(--amber)}
+.news-summary{font-size:11px;color:var(--dim);line-height:1.6}
+.news-source{font-size:10px;color:var(--amber);margin-top:3px}
+.adv{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.025);margin-bottom:6px}
+.adv-lvl{font-size:10px;font-weight:700;font-family:var(--mono);border-radius:5px;padding:3px 7px;flex-shrink:0}
+.adv-country{font-size:13px;color:var(--text);font-weight:600;flex:1;min-width:0}
+.adv-label{font-size:11px;color:var(--dim);font-weight:400}
+.adv-date{font-size:10px;color:var(--faint);font-family:var(--mono);flex-shrink:0}
 
 /* ── IPO ── */
-.ipo-legend{display:flex;gap:16px;margin-bottom:14px;align-items:center}
+.ipo-table{width:100%;border-collapse:collapse;margin-bottom:18px}
+.ipo-table th{font-size:9px;color:var(--dim);font-family:var(--mono);letter-spacing:1px;text-align:left;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.ipo-table td{font-size:12px;color:var(--text);padding:9px 8px;border-bottom:1px solid rgba(255,255,255,0.05);vertical-align:top}
+.ipo-table td.m{font-family:var(--mono);color:var(--muted);white-space:nowrap}
+.ipo-sym{font-size:10px;color:var(--amber);font-family:var(--mono)}
+.ipo-legend{display:flex;gap:16px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
 .ipo-dot{width:8px;height:8px;border-radius:2px}
-.ipo-leg-label{font-size:10px;color:#64748b}
-.ipo-hint{font-size:10px;color:#334155;margin-left:4px}
-.ipo-row{border-bottom:1px solid rgba(255,255,255,0.05);padding:10px 0;cursor:pointer}
+.ipo-leg-label{font-size:10px;color:var(--dim)}
+.ipo-row{border-bottom:1px solid rgba(255,255,255,0.05);padding:11px 0;cursor:pointer}
 .ipo-top{display:flex;align-items:center;gap:10px}
-.ipo-verdict{
-padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;
-min-width:44px;text-align:center;font-family:‘IBM Plex Mono’,monospace;flex-shrink:0;
-}
-.ipo-info{flex:1}
-.ipo-name-row{display:flex;justify-content:space-between}
-.ipo-name{font-size:13px;color:#e2e8f0;font-weight:600}
-.ipo-window{font-size:11px;color:#64748b;font-family:‘IBM Plex Mono’,monospace}
-.ipo-sub-row{display:flex;justify-content:space-between;margin-top:2px}
-.ipo-sector{font-size:11px;color:#94a3b8}
-.ipo-val{font-size:11px;color:#f59e0b;font-family:‘IBM Plex Mono’,monospace}
+.ipo-verdict{padding:3px 8px;border-radius:5px;font-size:10px;font-weight:700;min-width:48px;text-align:center;font-family:var(--mono);flex-shrink:0}
+.ipo-info{flex:1;min-width:0}
+.ipo-name-row,.ipo-sub-row{display:flex;justify-content:space-between;gap:8px}
+.ipo-sub-row{margin-top:2px}
+.ipo-name{font-size:13px;color:var(--text);font-weight:600}
+.ipo-window{font-size:11px;color:var(--dim);font-family:var(--mono)}
+.ipo-sector{font-size:11px;color:var(--muted)}
+.ipo-val{font-size:11px;color:var(--amber);font-family:var(--mono)}
 .ipo-arrow{color:#334155;font-size:11px}
-.ipo-take{
-margin-top:8px;padding:9px 12px;
-background:rgba(255,255,255,0.03);border-radius:8px;
-font-size:12px;color:#94a3b8;line-height:1.7;
-}
+.ipo-live{font-size:10px;color:#34d399;margin-top:4px;font-family:var(--mono)}
+.ipo-take{margin-top:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;color:var(--muted);line-height:1.7}
 .ipo-disclaimer{
-margin-top:14px;padding:9px 12px;
-background:rgba(245,158,11,0.05);border-radius:8px;
-border:1px solid rgba(245,158,11,0.1);
-font-size:10px;color:#475569;line-height:1.8;
+  margin-top:14px;padding:9px 12px;background:rgba(245,158,11,0.05);border-radius:8px;
+  border:1px solid rgba(245,158,11,0.1);font-size:10px;color:var(--faint);line-height:1.8;
 }
 
-.footer{text-align:center;margin-top:24px;font-size:10px;color:#1e293b;font-family:‘IBM Plex Mono’,monospace}
+.footer{text-align:center;margin-top:24px;font-size:10px;color:#334155;font-family:var(--mono);line-height:2}
+.footer button{background:none;border:none;color:var(--faint);text-decoration:underline;font-size:10px;font-family:var(--mono);padding:6px}
 </style>
-
 </head>
 <body>
 <div class="wrap">
 
   <!-- HEADER -->
-
   <div class="hdr">
     <div>
       <div class="hdr-title">⚡ COMMAND CENTER</div>
       <div class="hdr-date" id="hdr-date"></div>
     </div>
-    <div>
-      <div class="hdr-time" id="hdr-time"></div>
-      <div class="hdr-loc">📍 ALEXANDRIA, VA</div>
+    <div class="hdr-right">
+      <button class="brief-btn" id="brief-btn" onclick="toggleBriefing()">🔊 <span id="brief-label">Morning briefing</span></button>
+      <div>
+        <div class="hdr-time" id="hdr-time"></div>
+        <div class="hdr-loc">📍 ALEXANDRIA, VA</div>
+      </div>
     </div>
   </div>
 
-  <!-- ROW 1: Weather + Calendar -->
-
-  <div class="row1">
-
-```
-<!-- WEATHER -->
-<div class="card">
-  <div class="card-hdr">
-    <div class="card-icon" style="background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.3)">🌤</div>
-    <span class="card-title">WEATHER THIS WEEK</span>
-  </div>
-  <div id="weather-content">
-    <div style="color:#475569;font-size:12px">Loading weather…</div>
-  </div>
-</div>
-
-<!-- CALENDAR -->
-<div class="card">
-  <div class="card-hdr">
-    <div class="card-icon" style="background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3)">📅</div>
-    <span class="card-title">CALENDAR</span>
-    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-      <span class="cal-sync" id="cal-sync-time"></span>
-      <button class="cal-refresh" id="cal-refresh-btn" onclick="refreshCalendar()">
-        <span class="spin" id="cal-spin">↻</span>
-        <span id="cal-refresh-label">Refresh</span>
-      </button>
-    </div>
-  </div>
-  <div class="cal-tabs">
-    <button class="cal-tab active" id="tab-week" onclick="switchTab('week')">This Week (Detailed)</button>
-    <button class="cal-tab" id="tab-horizon" onclick="switchTab('horizon')">2-Week Horizon</button>
-  </div>
-  <div id="cal-syncing" style="display:none" class="cal-syncing">↻ Syncing calendar data…</div>
-  <div class="card-body" id="cal-body"></div>
-</div>
-```
-
+  <!-- TODAY AT A GLANCE -->
+  <div class="card glance" style="margin-bottom:16px">
+    <div class="glance-greet" id="glance-greet"></div>
+    <div class="tiles" id="glance-tiles"></div>
+    <div class="transcript" id="transcript"></div>
   </div>
 
-  <!-- ROW 2: Follow-ups + AI News + Travel News -->
-
-  <div class="row2">
-
-```
-<!-- FOLLOW-UPS -->
-<div class="card">
-  <div class="card-hdr">
-    <div class="card-icon" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3)">✅</div>
-    <span class="card-title">FOLLOW-UPS & ACTIONS</span>
-  </div>
-  <div class="card-body" id="followups-body"></div>
-</div>
-
-<!-- AI NEWS -->
-<div class="card">
-  <div class="card-hdr">
-    <div class="card-icon" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3)">🤖</div>
-    <span class="card-title">AI NEWS</span>
-  </div>
-  <div class="card-body">
-    <button class="news-btn" id="ai-btn" onclick="loadNews('ai')">Load News</button>
-    <div id="ai-news-body"><div class="news-empty">Tap Load News to fetch the latest AI headlines</div></div>
-  </div>
-</div>
-
-<!-- TRAVEL NEWS -->
-<div class="card">
-  <div class="card-hdr">
-    <div class="card-icon" style="background:rgba(14,165,233,0.15);border:1px solid rgba(14,165,233,0.3)">✈️</div>
-    <span class="card-title">TRAVEL ABROAD</span>
-  </div>
-  <div class="card-body">
-    <button class="news-btn" id="travel-btn" onclick="loadNews('travel')">Load News</button>
-    <div id="travel-news-body"><div class="news-empty">Tap Load News to fetch the latest travel headlines</div></div>
-  </div>
-</div>
-```
-
-  </div>
-
-  <!-- ROW 3: IPO Watchlist -->
-
-  <div class="row3">
+  <!-- WEATHER + CALENDAR -->
+  <div class="row row-wx">
     <div class="card">
       <div class="card-hdr">
-        <div class="card-icon" style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3)">📈</div>
-        <span class="card-title">IPO WATCHLIST — NEXT 3–6 MONTHS</span>
+        <div class="card-icon" style="background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.3)">🌤</div>
+        <span class="card-title">WEATHER THIS WEEK</span>
       </div>
-      <div class="card-body" style="max-height:520px" id="ipo-body"></div>
+      <div id="weather-content"><div class="empty">Loading weather…</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-icon" style="background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3)">📅</div>
+        <span class="card-title">CALENDAR</span>
+        <span class="stamp" id="cal-stamp"></span>
+        <button class="mini-btn" id="cal-btn" onclick="loadCalendar()"><span id="cal-spin">↻</span> Refresh</button>
+      </div>
+      <div class="tabs">
+        <button class="tab active" id="tab-week" onclick="switchTab('week')">This Week</button>
+        <button class="tab" id="tab-horizon" onclick="switchTab('horizon')">2-Week Horizon</button>
+      </div>
+      <div class="card-body" id="cal-body"><div class="empty">Loading calendar…</div></div>
     </div>
   </div>
 
-  <div class="footer" id="footer"></div>
+  <!-- COMMITTEES + REMINDERS + FOLLOW-UPS -->
+  <div class="row row-3">
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-icon" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3)">🗂</div>
+        <span class="card-title">COMMITTEE DEADLINES</span>
+      </div>
+      <div class="card-body" id="cmte-body"></div>
+      <form class="add-form" onsubmit="addDeadline(event)">
+        <select id="dl-cmte" aria-label="Committee"></select>
+        <input type="text" id="dl-text" placeholder="Deadline (e.g. Venue deposit)" autocomplete="off" required/>
+        <input type="date" id="dl-date" aria-label="Due date" required/>
+        <button type="submit">Add</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-icon" style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3)">📝</div>
+        <span class="card-title">REMINDERS & TO-DO</span>
+        <button class="mini-btn" id="rem-clear" onclick="clearDoneReminders()" style="display:none">Clear done</button>
+      </div>
+      <div class="card-body" id="rem-body"></div>
+      <form class="add-form" onsubmit="addReminder(event)">
+        <input type="text" id="rem-text" placeholder="Add a reminder…" autocomplete="off" required/>
+        <input type="date" id="rem-date" aria-label="Due date (optional)"/>
+        <button type="submit">Add</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-icon" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3)">✅</div>
+        <span class="card-title">FOLLOW-UPS & ACTIONS</span>
+      </div>
+      <div class="card-body" id="followups-body"></div>
+    </div>
+  </div>
+
+  <!-- AI NEWS + TRAVEL -->
+  <div class="row row-2">
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-icon" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3)">🤖</div>
+        <span class="card-title">AI NEWS</span>
+        <span class="stamp" id="ai-stamp"></span>
+        <button class="mini-btn" id="ai-btn" onclick="loadNews('ai')"><span id="ai-spin">↻</span> Refresh</button>
+      </div>
+      <div class="card-body" id="ai-body"><div class="empty">Loading headlines…</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-icon" style="background:rgba(14,165,233,0.15);border:1px solid rgba(14,165,233,0.3)">✈️</div>
+        <span class="card-title">TRAVEL ABROAD</span>
+        <span class="stamp" id="travel-stamp"></span>
+        <button class="mini-btn" id="travel-btn" onclick="loadNews('travel')"><span id="travel-spin">↻</span> Refresh</button>
+      </div>
+      <div class="card-body" id="travel-body"><div class="empty">Loading advisories…</div></div>
+    </div>
+  </div>
+
+  <!-- IPO -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-hdr">
+      <div class="card-icon" style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3)">📈</div>
+      <span class="card-title">IPO WATCH</span>
+      <span class="stamp" id="ipo-stamp"></span>
+      <button class="mini-btn" id="ipo-btn" onclick="loadIPOs()"><span id="ipo-spin">↻</span> Refresh</button>
+    </div>
+    <div class="card-body" style="max-height:620px" id="ipo-body"><div class="empty">Loading IPO calendar…</div></div>
+  </div>
+
+  <div class="footer">
+    <div id="footer-status"></div>
+    <button onclick="refreshAll(true)">Refresh everything</button> ·
+    <button onclick="resetPasscode()">Change passcode</button>
+  </div>
 </div>
 
 <script>
-// ── DATA ──────────────────────────────────────────────────────────────────
+// ── CONFIG ────────────────────────────────────────────────────────────────
+// Calendar events whose title or location contains one of a committee's
+// keywords show up automatically in that committee's deadline tracker.
+const COMMITTEES = [
+  {id:'nye',    name:'NYE Gala 2027',          icon:'🥂', color:'#f59e0b', keywords:['gala','nye','new year']},
+  {id:'stem',   name:'AF STEM Aviation',       icon:'✈️', color:'#38bdf8', keywords:['stem','aviation']},
+  {id:'awards', name:'Achievement and Awards', icon:'🏆', color:'#a78bfa', keywords:['achievement','award','awards']},
+];
+const REFRESH_MIN = {calendar:10, news:30, weather:30, ipo:360};
+
 const TYPE_COLOR = {
   work:"#6366f1",meeting:"#8b5cf6",alert:"#ef4444",health:"#10b981",
   finance:"#10b981",birthday:"#f59e0b",task:"#3b82f6",personal:"#ec4899",
   travel:"#0ea5e9",home:"#84cc16"
 };
-const WEEK_EVENTS = [
-  {date:"Wed Feb 25",day:"TODAY",events:[
-    {time:"10:00 AM",title:"BA Working Group",loc:"Room 1A674 (Work)",type:"work"},
-    {time:"7:30 PM",title:"Aviation Committee Meeting",loc:"Zoom / Google Meet",type:"meeting",note:"Neicko, Cocoa + chapter members"},
-  ]},
-  {date:"Thu Feb 26",day:"THU",events:[
-    {time:"All Day",title:"⚠️ Notion Renews Tomorrow",loc:"Cancel or buy yearly plan?",type:"alert"},
-    {time:"10:30 PM",title:"Take BP",loc:"Home",type:"health"},
-  ]},
-  {date:"Fri Feb 27",day:"FRI",events:[
-    {time:"All Day",title:"💰 FED PAYDAY",loc:"",type:"finance"},
-    {time:"All Day",title:"🎂 Jazzy J Birthday",loc:"",type:"birthday"},
-    {time:"9:00 AM",title:"Send STEM Aviation Reminder Email",loc:"AF session this weekend",type:"task"},
-    {time:"All Day",title:"Black Band @ Eddie V's",loc:"Eddie V's",type:"personal"},
-  ]},
-  {date:"Sat Feb 28",day:"SAT",events:[
-    {time:"All Day",title:"🎂 Marcus Hampton's 61st Birthday",loc:"",type:"birthday"},
-    {time:"All Day",title:"⚠️ AppleCard Report Due",loc:"Pay balance!",type:"alert"},
-    {time:"All Day",title:"Black Band @ Eddie V's",loc:"Eddie V's",type:"personal"},
-  ]},
-  {date:"Sun Mar 1",day:"SUN",events:[
-    {time:"11:00 AM",title:"Plan Rehoboth Beach – Juneteenth",loc:"Recurring planning session",type:"personal"},
-    {time:"2:00 PM",title:"Note to Sylvester (Chilo)",loc:"Backyard water line reminder",type:"task"},
-    {time:"6:00 PM",title:"Adjust Outside Lights",loc:"Home",type:"home"},
-    {time:"10:30 PM",title:"Take BP",loc:"Home",type:"health"},
-  ]},
-  {date:"Mon Mar 2",day:"MON",events:[
-    {time:"All Day",title:"🎂 Tanya Patterson's Birthday",loc:"",type:"birthday"},
-  ]},
-  {date:"Tue Mar 3",day:"TUE",events:[
-    {time:"All Day",title:"✈️ Depart for Miami",loc:"Virgin Cruise – Key West & Bahamas",type:"travel"},
-    {time:"All Day",title:"🏨 Check In: DUA Miami",loc:"1300 S Miami Ave · Res# 90311477",type:"travel"},
-  ]},
+const TYPE_RULES = [
+  ['birthday',/birthday|bday|🎂/i],
+  ['travel',/✈️|🏨|flight|depart|arriv|hotel|check[ -]?in|cruise|airport|\btrip\b|vacation/i],
+  ['finance',/pay ?day|paycheck|💰|\bbill\b|\btax/i],
+  ['alert',/⚠️|\bdue\b|deadline|renew|expir|\bcancel/i],
+  ['health',/doctor|dentist|\bbp\b|\bmeds?\b|appointment|\bgym\b|workout|pharmacy/i],
+  ['meeting',/meeting|zoom|\bcall\b|committee|\bsync\b|1:1|standup|working group/i],
+  ['task',/\bsend\b|\bemail\b|submit|remind|to-?do|note to|follow[ -]?up/i],
+  ['home',/\bhome\b|lights|yard|water line|cleaning|lawn/i],
 ];
-const HORIZON = [
-  {date:"Mar 3–8",title:"Virgin Cruise – Key West & Bahamas",detail:"With the AF fellas. Leave Miami Wed, return Sun.",type:"travel"},
-  {date:"Mar 3–4",title:"Stay: DUA Miami, Autograph Collection",detail:"Marriott · Res# 90311477",type:"travel"},
-  {date:"TBD",title:"Portugal Couples Trip Planning",detail:"Chapter 6-0 · Sep/Oct 2026 · Schedule Zoom w/ Karen",type:"travel"},
-  {date:"Recurring",title:"Rehoboth Beach – Juneteenth Weekend",detail:"Planning session every Sun through March",type:"personal"},
-];
-const FOLLOWUPS = [
-  {id:1,text:"Cancel or buy annual Notion plan — renews Feb 26",urgency:"HIGH",source:"CALENDAR",done:false},
-  {id:2,text:"Pay AppleCard balance — report due Feb 28",urgency:"HIGH",source:"CALENDAR",done:false},
-  {id:3,text:"Send STEM Aviation reminder email by Fri Feb 27, 9 AM",urgency:"HIGH",source:"CALENDAR",done:false},
-  {id:4,text:"Message Sylvester (Chilo) re: backyard water line – Sun Mar 1",urgency:"MED",source:"CALENDAR",done:false},
-  {id:5,text:"Schedule Portugal trip Zoom call with Karen and travelers",urgency:"MED",source:"EMAIL",done:false},
-  {id:6,text:"Confirm AF cruise details (packing, meetup) — departs Mar 3",urgency:"MED",source:"CALENDAR",done:false},
-];
-const IPOS = [
+const ACTION_RE = /⚠️|\b(due|pay|renews?|cancel|send|call|email|remind(er)?|deadline|submit|rsvp|book|confirm|register|sign up|follow[ -]?up|to-?do|order|schedule|return|apply|file|buy|pick up|drop off)\b/i;
+
+const IPO_WATCHLIST = [
   {name:"Databricks",sector:"AI / Data",window:"H2 2026",val:"$134B",verdict:"BUY",take:"Best risk/reward of the class. 65% YoY growth, $5.4B ARR, AI-native, cash-flow positive. A 'when not if' listing deeply embedded in enterprise workflows."},
   {name:"Cerebras",sector:"AI Chips",window:"Q2 2026",val:"$10B",verdict:"BUY",take:"Soonest opportunity. NVIDIA alternative with novel chip architecture. High risk/reward — speculative bet on AI infrastructure diversity."},
   {name:"Canva",sector:"Design SaaS",window:"2026–2027",val:"$42–50B",verdict:"BUY",take:"Profitable, 240M users, pivoting to enterprise. Direct AI competition with Adobe. Strong fundamentals without the pure-AI hype premium."},
-  {name:"SpaceX",sector:"Aerospace / AI",window:"Mid 2026",val:"$800B+",verdict:"WATCH",take:"Iconic company but entering at 62–68x sales is steep. Starlink is the real business. Wait for post-IPO price discovery before committing capital."},
+  {name:"SpaceX",aliases:["space exploration"],sector:"Aerospace / AI",window:"Mid 2026",val:"$800B+",verdict:"WATCH",take:"Iconic company but entering at 62–68x sales is steep. Starlink is the real business. Wait for post-IPO price discovery before committing capital."},
   {name:"OpenAI",sector:"AI / LLMs",window:"Q4 2026–27",val:"$830B+",verdict:"WATCH",take:"Dominant brand but complex structure and massive cloud costs. Needs to demonstrate profitability. Monitor the S-1 closely before deciding."},
   {name:"Stripe",sector:"Fintech",window:"Late 2026",val:"$120B+",verdict:"WATCH",take:"'Not in a rush' is their stance. Profitable and best-in-class but may not list in 2026. Excellent long-term hold if priced fairly."},
   {name:"Discord",sector:"Social / Comms",window:"2026–2027",val:"$20–30B",verdict:"AVOID",take:"Monetization has consistently lagged user growth. 200M MAUs but limited revenue per user. Wait until they prove the business model post-IPO."},
-  {name:"Kraken",sector:"Crypto Exchange",window:"2026",val:"$15B+",verdict:"WATCH",take:"Crypto is hot again but exchange valuations are cyclical. Only if you have crypto tolerance — not a core portfolio play."},
+  {name:"Kraken",aliases:["payward"],sector:"Crypto Exchange",window:"2026",val:"$15B+",verdict:"WATCH",take:"Crypto is hot again but exchange valuations are cyclical. Only if you have crypto tolerance — not a core portfolio play."},
 ];
 const VERDICT_STYLE = {
   BUY: {bg:"rgba(16,185,129,0.15)",color:"#10b981",border:"rgba(16,185,129,0.3)"},
@@ -393,277 +410,720 @@ const VERDICT_STYLE = {
   AVOID:{bg:"rgba(239,68,68,0.12)",color:"#ef4444",border:"rgba(239,68,68,0.3)"},
 };
 const SOURCE_STYLE = {
-  CALENDAR:{color:"#a78bfa",bg:"rgba(139,92,246,0.12)",border:"rgba(139,92,246,0.3)",icon:"📅"},
-  EMAIL:   {color:"#38bdf8",bg:"rgba(56,189,248,0.12)", border:"rgba(56,189,248,0.3)", icon:"📧"},
+  CALENDAR: {color:"#a78bfa",bg:"rgba(139,92,246,0.12)",border:"rgba(139,92,246,0.3)",icon:"📅"},
+  COMMITTEE:{color:"#fbbf24",bg:"rgba(245,158,11,0.12)",border:"rgba(245,158,11,0.3)",icon:"🗂"},
+  REMINDER: {color:"#34d399",bg:"rgba(16,185,129,0.12)",border:"rgba(16,185,129,0.3)",icon:"📝"},
 };
 const URGENCY_COLOR = {HIGH:"#ef4444",MED:"#f59e0b",LOW:"#10b981"};
-const RSS_PROXY = "https://api.rss2json.com/v1/api.json?rss_url=";
-const NEWS_SOURCES = {
-  ai:[
-    {url:"https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",name:"The Verge"},
-    {url:"https://techcrunch.com/feed/",name:"TechCrunch"},
-    {url:"https://feeds.feedburner.com/venturebeat/SZYF",name:"VentureBeat"},
-  ],
-  travel:[
-    {url:"https://www.travelandleisure.com/rss/all.rss",name:"Travel + Leisure"},
-    {url:"https://www.cntraveler.com/feed/rss",name:"Condé Nast Traveler"},
-    {url:"https://feeds.bbci.co.uk/news/world/rss.xml",name:"BBC World"},
-  ],
-};
+const ADV_COLOR = {1:"#10b981",2:"#f59e0b",3:"#f97316",4:"#ef4444"};
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safeUrl = u => /^https?:\/\//i.test(u || '') ? esc(u) : '#';
+const DAY = 86400e3;
+const startOfDay = (d = new Date()) => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const ymd = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const parseYMD = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const daysUntil = s => Math.round((parseYMD(s) - startOfDay()) / DAY);
+const fmtTime = d => d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+const fmtShort = d => d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+const fmtMD = d => d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const lsGet = (k, fallback) => { try { const v = localStorage.getItem(k); return v == null ? fallback : JSON.parse(v); } catch { return fallback; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+function dueChip(days){
+  const [txt, c] = days < 0 ? [`${-days}d overdue`, URGENCY_COLOR.HIGH]
+    : days === 0 ? ['Today', URGENCY_COLOR.HIGH]
+    : days === 1 ? ['Tomorrow', URGENCY_COLOR.MED]
+    : days <= 7 ? [`in ${days}d`, URGENCY_COLOR.MED]
+    : [`in ${days}d`, URGENCY_COLOR.LOW];
+  return `<span class="tag" style="color:${c};background:${c}18;border:1px solid ${c}35">${txt}</span>`;
+}
+function spin(key, on){
+  const s = $(key+'-spin'), b = $(key+'-btn');
+  if (s) s.className = on ? 'spinning' : '';
+  if (b) b.disabled = on;
+}
+const lastLoaded = {};
+function stamp(key, label){
+  lastLoaded[key] = Date.now();
+  const el = $(key+'-stamp');
+  if (el) el.textContent = label || ('updated ' + fmtTime(new Date()));
+  renderFooter();
+}
+
+// ── API + PASSCODE ────────────────────────────────────────────────────────
+const getPasscode = () => lsGet('cc-passcode', '');
+async function api(path, opts = {}){
+  const used = getPasscode();
+  const headers = {...(opts.headers || {})};
+  if (used) headers['x-dashboard-passcode'] = used;
+  const r = await fetch(path, {...opts, headers, cache:'no-store'});
+  if (r.status === 401 && !opts._retried){
+    // Another request may have already asked while this one was in flight.
+    if (getPasscode() === used){
+      const p = window.prompt('Enter your Command Center passcode');
+      if (!p) throw new Error('locked');
+      lsSet('cc-passcode', p.trim());
+    }
+    return api(path, {...opts, _retried:true});
+  }
+  if (r.status === 401) throw new Error('locked');
+  return r;
+}
+function resetPasscode(){
+  lsSet('cc-passcode', '');
+  loadCalendar(); syncPull();
+}
+function apiErrorHtml(err, what){
+  if (err.message === 'locked') return `<div class="empty">🔒 ${what} is locked.<br/><b>Tap "Change passcode"</b> at the bottom to enter it.</div>`;
+  if (location.protocol === 'file:') return `<div class="empty">Live ${what.toLowerCase()} needs the Vercel deployment — this copy was opened as a file.</div>`;
+  return `<div class="empty">Couldn't load ${what.toLowerCase()} right now (${esc(err.message)}).<br/>It will retry automatically.</div>`;
+}
+
+// ── STATE (reminders, deadlines, checked follow-ups) ──────────────────────
+// Saved on this device; also synced to the cloud when Upstash is connected.
+let state = lsGet('cc-state', {reminders:[], deadlines:[], fuDone:{}});
+let stateUpdatedAt = lsGet('cc-state-at', 0);
+let syncMode = 'local'; // 'local' | 'cloud' | 'error'
+let pushTimer = null;
+state.reminders ||= []; state.deadlines ||= []; state.fuDone ||= {};
+
+function saveState(){
+  stateUpdatedAt = Date.now();
+  lsSet('cc-state', state); lsSet('cc-state-at', stateUpdatedAt);
+  renderStateful();
+  if (syncMode !== 'local'){ clearTimeout(pushTimer); pushTimer = setTimeout(syncPush, 800); }
+}
+async function syncPull(){
+  try {
+    const r = await api('/api/store');
+    if (r.status === 501 || r.status === 404){ syncMode = 'local'; return renderFooter(); }
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const remote = await r.json();
+    syncMode = 'cloud';
+    if (remote.state && remote.updatedAt > stateUpdatedAt){
+      state = {reminders:[], deadlines:[], fuDone:{}, ...remote.state};
+      stateUpdatedAt = remote.updatedAt;
+      lsSet('cc-state', state); lsSet('cc-state-at', stateUpdatedAt);
+      renderStateful();
+    } else if (stateUpdatedAt > (remote.updatedAt || 0)){
+      syncPush();
+    }
+  } catch (e){ syncMode = location.protocol === 'file:' ? 'local' : 'error'; }
+  renderFooter();
+}
+async function syncPush(){
+  try {
+    const r = await api('/api/store', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({state, updatedAt:stateUpdatedAt})});
+    syncMode = r.ok ? 'cloud' : (r.status === 501 ? 'local' : 'error');
+  } catch { syncMode = 'error'; }
+  renderFooter();
+}
 
 // ── CLOCK ─────────────────────────────────────────────────────────────────
+let currentDayKey = ymd(new Date());
 function updateClock(){
   const now = new Date();
-  document.getElementById('hdr-time').textContent =
-    now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  document.getElementById('hdr-date').textContent =
-    now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
-  document.getElementById('footer').textContent =
-    'Built with Claude · ' + now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  $('hdr-time').textContent = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  $('hdr-date').textContent = now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  if (ymd(now) !== currentDayKey){ currentDayKey = ymd(now); renderAll(); refreshAll(true); }
+  else if (now.getSeconds() === 0) { renderGlance(); if (currentTab === 'week') renderCalendar(); }
 }
 setInterval(updateClock, 1000);
 updateClock();
 
 // ── WEATHER ───────────────────────────────────────────────────────────────
+let wx = null;
 function wmoIcon(c){
-  const n=parseInt(c);
+  const n = parseInt(c);
   if(n<=113)return'☀️';if(n<=116)return'⛅';if(n<=119)return'☁️';
   if(n<=143)return'🌫️';if(n<=260)return'🌦️';if(n<=296)return'🌧️';
   if(n<=330)return'❄️';return'🌩️';
 }
-fetch('https://wttr.in/Alexandria,VA?format=j1')
-  .then(r=>r.json())
-  .then(d=>{
-    const cur=d.current_condition[0];
-    const days=d.weather.slice(0,5);
-    const dayLabel=s=>new Date(s).toLocaleDateString('en-US',{weekday:'short'});
-    let html = `
-      <div class="wx-current">
+async function loadWeather(){
+  try {
+    const d = await (await fetch('https://wttr.in/Alexandria,VA?format=j1', {cache:'no-store'})).json();
+    const cur = d.current_condition[0];
+    const days = d.weather.slice(0,5);
+    wx = {temp:cur.temp_F, feels:cur.FeelsLikeF, desc:cur.weatherDesc[0].value, code:cur.weatherCode,
+          hi:days[0].maxtempF, lo:days[0].mintempF,
+          rain:Math.max(...(days[0].hourly||[]).map(h => +h.chanceofrain || 0))};
+    const dayLabel = s => parseYMD(s).toLocaleDateString('en-US',{weekday:'short'});
+    let html = `<div class="wx-current">
         <span style="font-size:40px">${wmoIcon(cur.weatherCode)}</span>
         <div>
-          <div class="wx-temp">${cur.temp_F}°F</div>
-          <div class="wx-desc">${cur.weatherDesc[0].value} · Feels ${cur.FeelsLikeF}°F</div>
+          <div class="wx-temp">${esc(cur.temp_F)}°F</div>
+          <div class="wx-desc">${esc(wx.desc)} · Feels ${esc(cur.FeelsLikeF)}°F</div>
           <div class="wx-loc">📍 Alexandria, VA</div>
         </div>
-      </div>
-      <div class="wx-days">`;
-    days.forEach((d,i)=>{
-      html+=`<div class="wx-day">
-        <div class="wx-day-label">${i===0?'NOW':dayLabel(d.date)}</div>
+      </div><div class="wx-days">`;
+    days.forEach((d,i) => {
+      html += `<div class="wx-day">
+        <div class="wx-day-label">${i===0?'TODAY':dayLabel(d.date)}</div>
         <div class="wx-day-icon">${wmoIcon(d.hourly[4]?.weatherCode)}</div>
-        <div class="wx-day-hi">${d.maxtempF}°</div>
-        <div class="wx-day-lo">${d.mintempF}°</div>
+        <div class="wx-day-hi">${esc(d.maxtempF)}°</div>
+        <div class="wx-day-lo">${esc(d.mintempF)}°</div>
       </div>`;
     });
-    html+='</div>';
-    document.getElementById('weather-content').innerHTML=html;
-  })
-  .catch(()=>{
-    document.getElementById('weather-content').innerHTML='<div style="color:#475569;font-size:12px">Weather unavailable</div>';
-  });
+    $('weather-content').innerHTML = html + '</div>';
+    lastLoaded.weather = Date.now();
+  } catch {
+    if (!wx) $('weather-content').innerHTML = '<div class="empty">Weather unavailable — will retry</div>';
+  }
+  renderGlance();
+}
 
 // ── CALENDAR ──────────────────────────────────────────────────────────────
+let calEvents = [];      // normalized events from /api/calendar
+let calStatus = 'loading'; // loading | ok | unconfigured | error
+let calError = null;
 let currentTab = 'week';
 
-function renderWeek(){
-  let html='';
-  WEEK_EVENTS.forEach(day=>{
-    html+=`<div class="day-block">
-      <div class="day-label">
-        <span class="day-name ${day.day==='TODAY'?'today':''}">${day.day}</span>
-        <span class="day-date">${day.date}</span>
-      </div>`;
-    day.events.forEach(ev=>{
-      const color=TYPE_COLOR[ev.type]||'#334155';
-      html+=`<div class="event-row" style="border-left:3px solid ${color}">
-        <div class="event-time">${ev.time}</div>
-        <div>
-          <div class="event-title">${ev.title}</div>
-          ${ev.loc?`<div class="event-loc">${ev.loc}</div>`:''}
-          ${ev.note?`<div class="event-note">👥 ${ev.note}</div>`:''}
-        </div>
-      </div>`;
-    });
-    html+='</div>';
-  });
-  return html;
+function classify(e){
+  const txt = e.title + ' ' + e.loc;
+  for (const [type, re] of TYPE_RULES) if (re.test(txt)) return type;
+  return /work/i.test(e.cal) ? 'work' : 'personal';
+}
+function normalize(e){
+  const s = e.allDay ? parseYMD(e.start) : new Date(e.start);
+  let en = e.allDay ? parseYMD(e.end) : new Date(e.end);
+  if (e.allDay && en <= s) en = addDays(s, 1);
+  const ev = {...e, s, en};
+  ev.type = classify(ev);
+  return ev;
+}
+function eventsOn(day){
+  const d0 = startOfDay(day), d1 = addDays(d0, 1);
+  return calEvents
+    .filter(e => e.s < d1 && (e.en > d0 || (+e.en === +e.s && e.s >= d0)))
+    .sort((a,b) => (b.allDay - a.allDay) || (a.s - b.s));
+}
+function eventTimeLabel(e, day){
+  if (e.allDay) return 'All Day';
+  if (e.s < startOfDay(day)) return 'cont.';
+  return fmtTime(e.s);
 }
 
-function renderHorizon(){
-  let html='<div class="hz-label">KEY EVENTS ON THE HORIZON</div>';
-  HORIZON.forEach(ev=>{
-    const color=TYPE_COLOR[ev.type]||'#334155';
-    html+=`<div class="hz-item" style="border-left:3px solid ${color}">
-      <div class="hz-top">
-        <div class="hz-title">${ev.title}</div>
-        <div class="hz-date">${ev.date}</div>
-      </div>
-      <div class="hz-detail">${ev.detail}</div>
+async function loadCalendar(){
+  spin('cal', true);
+  try {
+    const r = await api('/api/calendar?days=180');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    if (!data.configured){ calStatus = 'unconfigured'; calEvents = []; }
+    else {
+      calEvents = data.events.map(normalize);
+      calStatus = 'ok';
+      calError = data.errors?.length ? data.errors.join('; ') : null;
+    }
+    stamp('cal');
+  } catch (err){
+    calStatus = 'error'; calError = err;
+  }
+  spin('cal', false);
+  renderCalendar(); renderCommittees(); renderFollowups(); renderTravel(); renderGlance();
+}
+
+function renderCalendar(){
+  const body = $('cal-body');
+  if (calStatus === 'loading') return;
+  if (calStatus === 'unconfigured'){
+    body.innerHTML = `<div class="empty">📅 Your Google Calendar isn't connected yet.<br/>Add its <b>secret iCal address</b> to Vercel as <b>GCAL_ICS_URLS</b> — see the README for the 2-minute steps.</div>`;
+    return;
+  }
+  if (calStatus === 'error' && !calEvents.length){ body.innerHTML = apiErrorHtml(calError, 'Calendar'); return; }
+  let html = typeof calError === 'string' ? `<div class="note">⚠️ Some calendars didn't load: ${esc(calError)}</div>` : '';
+  html += currentTab === 'week' ? weekHtml() : horizonHtml();
+  body.innerHTML = html;
+}
+
+function weekHtml(){
+  const today = startOfDay(), now = new Date();
+  let html = '';
+  for (let i = 0; i < 7; i++){
+    const day = addDays(today, i);
+    const evs = eventsOn(day);
+    const name = i === 0 ? 'TODAY' : i === 1 ? 'TOMORROW' : day.toLocaleDateString('en-US',{weekday:'short'}).toUpperCase();
+    html += `<div class="day-block"><div class="day-label">
+      <span class="day-name ${i===0?'today':''}">${name}</span>
+      <span class="day-date">${fmtShort(day)}</span></div>`;
+    if (!evs.length) html += `<div class="event-row"><div class="event-time">—</div><div class="event-loc">Nothing scheduled</div></div>`;
+    evs.forEach(e => {
+      const past = i === 0 && !e.allDay && e.en < now;
+      html += `<div class="event-row${past?' past':''}" style="border-left:3px solid ${TYPE_COLOR[e.type]||'#334155'}">
+        <div class="event-time">${eventTimeLabel(e, day)}</div>
+        <div style="min-width:0;flex:1">
+          <div class="event-title">${esc(e.title)}</div>
+          ${e.loc ? `<div class="event-loc">${esc(e.loc)}</div>` : ''}
+        </div>
+        ${calendarNames().length > 1 ? `<span class="event-cal">${esc(e.cal)}</span>` : ''}
+      </div>`;
+    });
+    html += '</div>';
+  }
+  return html;
+}
+const calendarNames = () => [...new Set(calEvents.map(e => e.cal))];
+
+// Key dates beyond this week: all-day/multi-day items and travel, skipping
+// things that repeat constantly (daily meds, weekly meetings).
+function horizonEvents(fromDay, toDay){
+  const inRange = calEvents.filter(e => e.s < addDays(startOfDay(), toDay) && e.en > addDays(startOfDay(), fromDay));
+  const counts = {};
+  inRange.forEach(e => counts[e.title] = (counts[e.title] || 0) + 1);
+  const seen = new Set();
+  return inRange.filter(e => {
+    if (counts[e.title] > 2 || seen.has(e.title)) return false;
+    seen.add(e.title);
+    return e.allDay || (e.en - e.s) > 20 * 3600e3 || ['travel','birthday','alert','finance'].includes(e.type);
+  });
+}
+function horizonHtml(){
+  const evs = horizonEvents(7, 21);
+  let html = '<div class="section-label">KEY EVENTS · NEXT 1–3 WEEKS</div>';
+  if (!evs.length) return html + '<div class="empty">Nothing big on the horizon.</div>';
+  evs.forEach(e => {
+    const lastDay = e.allDay ? addDays(e.en, -1) : e.en;
+    const multi = ymd(lastDay) !== ymd(e.s);
+    const date = multi ? `${fmtMD(e.s)}–${fmtMD(lastDay)}` : fmtShort(e.s);
+    html += `<div class="hz-item" style="border-left:3px solid ${TYPE_COLOR[e.type]||'#334155'}">
+      <div class="hz-top"><div class="hz-title">${esc(e.title)}</div><div class="hz-date">${esc(date)}</div></div>
+      <div class="hz-detail">${e.allDay ? '' : fmtTime(e.s) + (e.loc ? ' · ' : '')}${esc(e.loc)}</div>
     </div>`;
   });
   return html;
 }
-
 function switchTab(tab){
-  currentTab=tab;
-  document.getElementById('tab-week').className='cal-tab'+(tab==='week'?' active':'');
-  document.getElementById('tab-horizon').className='cal-tab'+(tab==='horizon'?' active':'');
-  document.getElementById('cal-body').innerHTML=tab==='week'?renderWeek():renderHorizon();
+  currentTab = tab;
+  $('tab-week').className = 'tab' + (tab === 'week' ? ' active' : '');
+  $('tab-horizon').className = 'tab' + (tab === 'horizon' ? ' active' : '');
+  renderCalendar();
 }
 
-function refreshCalendar(){
-  const btn=document.getElementById('cal-refresh-btn');
-  const spin=document.getElementById('cal-spin');
-  const lbl=document.getElementById('cal-refresh-label');
-  const syncing=document.getElementById('cal-syncing');
-  btn.disabled=true;
-  spin.classList.add('spinning');
-  lbl.textContent='Syncing…';
-  syncing.style.display='block';
-  setTimeout(()=>{
-    switchTab(currentTab);
-    syncing.style.display='none';
-    spin.classList.remove('spinning');
-    lbl.textContent='Refresh';
-    btn.disabled=false;
-    const now=new Date();
-    document.getElementById('cal-sync-time').textContent=
-      'synced '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-  },1200);
+// ── COMMITTEES ────────────────────────────────────────────────────────────
+function committeeItems(c){
+  const re = new RegExp('\\b(' + c.keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|') + ')\\b', 'i');
+  const manual = state.deadlines.filter(d => d.cmte === c.id).map(d => ({...d, kind:'manual'}));
+  const seen = new Set();
+  const fromCal = calEvents
+    .filter(e => e.en > startOfDay() && re.test(e.title + ' ' + e.loc))
+    .filter(e => !seen.has(e.title) && seen.add(e.title))   // next occurrence only
+    .map(e => ({id:e.id, title:e.title, date:ymd(e.s), time:e.allDay ? '' : fmtTime(e.s), kind:'cal', done:false}));
+  return [...manual, ...fromCal].sort((a,b) => (a.done - b.done) || a.date.localeCompare(b.date));
+}
+function nextCommitteeDeadline(){
+  const all = COMMITTEES.flatMap(c => committeeItems(c).filter(i => !i.done).map(i => ({...i, c})));
+  return all.sort((a,b) => a.date.localeCompare(b.date))[0] || null;
+}
+function renderCommittees(){
+  let html = '';
+  COMMITTEES.forEach(c => {
+    const items = committeeItems(c);
+    const manual = items.filter(i => i.kind === 'manual');
+    const done = manual.filter(i => i.done).length;
+    const pct = manual.length ? Math.round(done / manual.length * 100) : 0;
+    html += `<div class="cmte" style="--c:${c.color}">
+      <div class="cmte-hdr"><span>${c.icon}</span><span class="cmte-name">${esc(c.name)}</span>
+        <span class="cmte-progress">${manual.length ? `${done}/${manual.length} done` : ''}</span></div>
+      ${manual.length ? `<div class="bar"><div style="width:${pct}%"></div></div>` : ''}`;
+    if (!items.length) html += `<div class="empty" style="padding:10px 0">No deadlines yet — add one below.</div>`;
+    const doneShown = items.filter(i => i.done).slice(-3);
+    items.filter(i => !i.done).concat(doneShown).forEach(i => {
+      const days = daysUntil(i.date);
+      html += `<div class="check-row${i.done?' done':''}">
+        ${i.kind === 'cal'
+          ? `<div class="check cal" title="From your calendar">📅</div>`
+          : `<button class="check${i.done?' checked':''}" onclick="toggleDeadline('${i.id}')" aria-label="Mark done">${i.done?'✓':''}</button>`}
+        <div class="check-main">
+          <div class="check-text">${esc(i.title)}</div>
+          <div class="check-meta">
+            <span class="tag" style="color:var(--muted);background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)">${fmtShort(parseYMD(i.date))}${i.time ? ' · ' + i.time : ''}</span>
+            ${i.done ? '' : dueChip(days)}
+          </div>
+        </div>
+        ${i.kind === 'manual' ? `<button class="del" onclick="deleteDeadline('${i.id}')" aria-label="Delete">✕</button>` : ''}
+      </div>`;
+    });
+    html += '</div>';
+  });
+  $('cmte-body').innerHTML = html;
+}
+function addDeadline(ev){
+  ev.preventDefault();
+  const title = $('dl-text').value.trim(), date = $('dl-date').value, cmte = $('dl-cmte').value;
+  if (!title || !date) return;
+  state.deadlines.push({id:uid(), cmte, title, date, done:false});
+  lsSet('cc-last-cmte', cmte);
+  $('dl-text').value = ''; $('dl-date').value = '';
+  saveState();
+}
+function toggleDeadline(id){
+  const d = state.deadlines.find(x => x.id === id);
+  if (d){ d.done = !d.done; saveState(); }
+}
+function deleteDeadline(id){
+  const d = state.deadlines.find(x => x.id === id);
+  if (d && confirm(`Delete "${d.title}"?`)){ state.deadlines = state.deadlines.filter(x => x.id !== id); saveState(); }
 }
 
-switchTab('week');
+// ── REMINDERS ─────────────────────────────────────────────────────────────
+function sortedReminders(){
+  return [...state.reminders].sort((a,b) =>
+    (a.done - b.done) || ((a.date ? 0 : 1) - (b.date ? 0 : 1)) || (a.date || '').localeCompare(b.date || '') || a.created - b.created);
+}
+function remindersDue(){
+  const open = state.reminders.filter(r => !r.done && r.date);
+  return {today: open.filter(r => daysUntil(r.date) === 0), overdue: open.filter(r => daysUntil(r.date) < 0)};
+}
+function renderReminders(){
+  const list = sortedReminders();
+  $('rem-clear').style.display = list.some(r => r.done) ? '' : 'none';
+  if (!list.length){ $('rem-body').innerHTML = '<div class="empty">Nothing on your list.<br/>Add a reminder below — give it a date to see it in your briefing.</div>'; return; }
+  $('rem-body').innerHTML = list.map(r => `<div class="check-row${r.done?' done':''}">
+      <button class="check${r.done?' checked':''}" onclick="toggleReminder('${r.id}')" aria-label="Mark done">${r.done?'✓':''}</button>
+      <div class="check-main">
+        <div class="check-text">${esc(r.text)}</div>
+        ${r.date ? `<div class="check-meta"><span class="tag" style="color:var(--muted);background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)">${fmtShort(parseYMD(r.date))}</span>${r.done ? '' : dueChip(daysUntil(r.date))}</div>` : ''}
+      </div>
+      <button class="del" onclick="deleteReminder('${r.id}')" aria-label="Delete">✕</button>
+    </div>`).join('');
+}
+function addReminder(ev){
+  ev.preventDefault();
+  const text = $('rem-text').value.trim();
+  if (!text) return;
+  state.reminders.push({id:uid(), text, date:$('rem-date').value || '', done:false, created:Date.now()});
+  $('rem-text').value = ''; $('rem-date').value = '';
+  saveState();
+}
+function toggleReminder(id){
+  const r = state.reminders.find(x => x.id === id);
+  if (r){ r.done = !r.done; saveState(); }
+}
+function deleteReminder(id){ state.reminders = state.reminders.filter(x => x.id !== id); saveState(); }
+function clearDoneReminders(){ state.reminders = state.reminders.filter(x => !x.done); saveState(); }
 
 // ── FOLLOW-UPS ────────────────────────────────────────────────────────────
+// Built live from: action-like calendar items in the next 7 days, committee
+// deadlines due within 14 days, and overdue reminders.
+function followups(){
+  const today = startOfDay(), out = [], seen = new Set();
+  calEvents.filter(e => e.en > today && e.s < addDays(today, 7) && ACTION_RE.test(e.title + ' ' + e.loc))
+    .forEach(e => {
+      if (seen.has(e.title)) return; seen.add(e.title);
+      out.push({key:'cal:' + e.id, text:e.title + (e.allDay ? '' : ' — ' + fmtTime(e.s)), date:ymd(e.s), source:'CALENDAR'});
+    });
+  COMMITTEES.forEach(c => committeeItems(c)
+    .filter(i => i.kind === 'manual' && !i.done && daysUntil(i.date) <= 14)
+    .forEach(i => out.push({key:'dl:' + i.id, text:`${c.name}: ${i.title}`, date:i.date, source:'COMMITTEE', deadlineId:i.id})));
+  state.reminders.filter(r => !r.done && r.date && daysUntil(r.date) < 0)
+    .forEach(r => out.push({key:'rem:' + r.id, text:r.text, date:r.date, source:'REMINDER', reminderId:r.id}));
+  return out.map(f => {
+    const d = daysUntil(f.date);
+    return {...f, days:d, urgency: d <= 1 ? 'HIGH' : d <= 4 ? 'MED' : 'LOW',
+      done: f.deadlineId || f.reminderId ? false : !!state.fuDone[f.key]};
+  }).sort((a,b) => (a.done - b.done) || a.date.localeCompare(b.date));
+}
 function renderFollowups(){
-  let html=`<div class="fu-legend">
-    <div class="fu-leg-item">📅 CALENDAR</div>
-    <div class="fu-leg-item">📧 EMAIL</div>
-    <span style="font-size:9px;color:#334155;font-family:'IBM Plex Mono',monospace">· TAP TO COMPLETE</span>
-  </div>`;
-  FOLLOWUPS.forEach(f=>{
-    const ss=SOURCE_STYLE[f.source]||SOURCE_STYLE.CALENDAR;
-    const uc=URGENCY_COLOR[f.urgency];
-    html+=`<div class="fu-row${f.done?' done':''}" onclick="toggleFU(${f.id})">
-      <div class="fu-check${f.done?' checked':''}" id="check-${f.id}">
-        ${f.done?'<span class="fu-check-mark">✓</span>':''}
+  const body = $('followups-body');
+  if (calStatus === 'loading'){ body.innerHTML = '<div class="empty">Loading…</div>'; return; }
+  const list = followups();
+  let html = `<div class="check-meta" style="margin:0 0 6px">
+    ${Object.entries(SOURCE_STYLE).map(([k,s]) => `<span class="tag" style="color:${s.color};background:${s.bg};border:1px solid ${s.border}">${s.icon} ${k}</span>`).join('')}
+    <span class="stamp">· TAP ☐ TO COMPLETE</span></div>`;
+  if (!list.length) html += `<div class="empty">No follow-ups for the next week. 🎉${calStatus === 'unconfigured' ? '<br/>Connect your calendar to pull action items automatically.' : ''}</div>`;
+  list.forEach(f => {
+    const ss = SOURCE_STYLE[f.source], uc = URGENCY_COLOR[f.urgency];
+    html += `<div class="check-row${f.done?' done':''}">
+      <button class="check${f.done?' checked':''}" onclick="toggleFU('${esc(f.key)}')" aria-label="Mark done">${f.done?'✓':''}</button>
+      <div class="check-main">
+        <div class="check-text">${esc(f.text)}</div>
+        <div class="check-meta">
+          <span class="tag" style="color:${ss.color};background:${ss.bg};border:1px solid ${ss.border}">${ss.icon} ${f.source}</span>
+          ${f.done ? '' : `<span class="tag" style="color:${uc};background:${uc}18;border:1px solid ${uc}35">${f.urgency}</span>` + dueChip(f.days)}
+        </div>
       </div>
-      <div class="fu-text" id="futext-${f.id}">${f.text}</div>
-      <div class="tag" style="color:${ss.color};background:${ss.bg};border:1px solid ${ss.border}">${ss.icon} ${f.source}</div>
-      <div class="tag" style="color:${uc};background:${uc}18;border:1px solid ${uc}35">${f.urgency}</div>
     </div>`;
   });
-  document.getElementById('followups-body').innerHTML=html;
+  body.innerHTML = html;
+}
+function toggleFU(key){
+  if (key.startsWith('dl:')) return toggleDeadline(key.slice(3));
+  if (key.startsWith('rem:')) return toggleReminder(key.slice(4));
+  if (state.fuDone[key]) delete state.fuDone[key]; else state.fuDone[key] = Date.now();
+  // Forget checkmarks older than 60 days so this never grows unbounded.
+  for (const [k, t] of Object.entries(state.fuDone)) if (Date.now() - t > 60 * DAY) delete state.fuDone[k];
+  saveState();
 }
 
-function toggleFU(id){
-  const item=FOLLOWUPS.find(f=>f.id===id);
-  if(!item)return;
-  item.done=!item.done;
-  renderFollowups();
+// ── NEWS + TRAVEL ADVISORIES ──────────────────────────────────────────────
+const news = {ai:null, travel:null};
+const newsErr = {ai:null, travel:null};
+async function loadNews(feed){
+  spin(feed, true);
+  try {
+    const r = await fetch('/api/news?feed=' + feed, {cache:'no-store'});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    if (!data.items.length && !(data.advisories || []).length) throw new Error('no stories returned');
+    news[feed] = data; newsErr[feed] = null;
+    stamp(feed);
+  } catch (err){ newsErr[feed] = err; }
+  spin(feed, false);
+  feed === 'ai' ? renderAI() : renderTravel();
+  renderGlance();
+}
+function newsItemsHtml(items){
+  return items.map(i => `<div class="news-item">
+      <a href="${safeUrl(i.link)}" target="_blank" rel="noopener" class="news-title">${esc(i.title)}</a>
+      ${i.summary ? `<div class="news-summary">${esc(i.summary.length > 160 ? i.summary.slice(0,160).trim() + '…' : i.summary)}</div>` : ''}
+      <div class="news-source">— ${esc(i.source)}${i.date ? ' · ' + fmtMD(new Date(i.date)) : ''}</div>
+    </div>`).join('');
+}
+function renderAI(){
+  const d = news.ai;
+  if (!d){ $('ai-body').innerHTML = newsErr.ai ? apiErrorHtml(newsErr.ai, 'AI news') : '<div class="empty">Loading headlines…</div>'; return; }
+  $('ai-body').innerHTML = newsItemsHtml(d.items.slice(0, 8));
+}
+// Countries named in upcoming calendar events (e.g. "Portugal trip") get
+// their State Department advisory pinned to the top.
+function tripAdvisories(advisories){
+  const upcoming = calEvents.filter(e => e.en > startOfDay()).map(e => e.title + ' ' + e.loc).join(' \n ');
+  if (!upcoming) return [];
+  return advisories.filter(a => {
+    const names = a.country.replace(/\(.*?\)/g, '').split(/,|\band\b/).map(s => s.replace(/^\s*the\s+/i, '').trim()).filter(s => s.length > 3);
+    return names.some(n => new RegExp('\\b' + n.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\b', 'i').test(upcoming));
+  });
+}
+function advHtml(a){
+  const c = ADV_COLOR[a.level] || '#64748b';
+  return `<a class="adv" href="${safeUrl(a.link)}" target="_blank" rel="noopener">
+    <span class="adv-lvl" style="color:${c};background:${c}1f;border:1px solid ${c}40">LVL ${a.level}</span>
+    <span class="adv-country">${esc(a.country)}<br/><span class="adv-label">${esc(a.label)}</span></span>
+    ${a.date ? `<span class="adv-date">${fmtMD(new Date(a.date))}</span>` : ''}
+  </a>`;
+}
+function renderTravel(){
+  const d = news.travel;
+  if (!d){ $('travel-body').innerHTML = newsErr.travel ? apiErrorHtml(newsErr.travel, 'Travel news') : '<div class="empty">Loading advisories…</div>'; return; }
+  const adv = d.advisories || [];
+  const mine = tripAdvisories(adv);
+  let html = '';
+  if (mine.length) html += `<div class="section-label">🧳 YOUR UPCOMING DESTINATIONS</div>` + mine.map(advHtml).join('');
+  if (adv.length) html += `<div class="section-label" style="margin-top:12px">🛂 LATEST STATE DEPT. ADVISORY UPDATES</div>` +
+    adv.filter(a => !mine.includes(a)).slice(0, 5).map(advHtml).join('');
+  if (d.items.length) html += `<div class="section-label" style="margin-top:14px">📰 TRAVEL HEADLINES</div>` + newsItemsHtml(d.items.slice(0, 5));
+  $('travel-body').innerHTML = html;
 }
 
-renderFollowups();
-
-// ── NEWS ──────────────────────────────────────────────────────────────────
-async function loadNews(feedKey){
-  const btn=document.getElementById(feedKey+'-btn');
-  const body=document.getElementById(feedKey+'-news-body');
-  btn.disabled=true;
-  btn.textContent='Loading…';
-  body.innerHTML='<div class="news-empty">Fetching latest stories…</div>';
-
-  const sources=NEWS_SOURCES[feedKey]||[];
-  const allItems=[];
-
-  await Promise.all(sources.map(async src=>{
-    try{
-      const res=await fetch(RSS_PROXY+encodeURIComponent(src.url)+'&count=3');
-      const data=await res.json();
-      if(data.status==='ok'&&data.items){
-        data.items.slice(0,3).forEach(item=>{
-          allItems.push({
-            title:item.title,
-            summary:item.description?item.description.replace(/<[^>]+>/g,'').slice(0,160).trim()+'…':'',
-            source:src.name,
-            pubDate:item.pubDate,
-            link:item.link,
-          });
-        });
-      }
-    }catch(e){}
-  }));
-
-  allItems.sort((a,b)=>new Date(b.pubDate)-new Date(a.pubDate));
-  const top=allItems.slice(0,5);
-
-  if(top.length===0){
-    body.innerHTML='<div class="news-empty">No stories found — try again shortly</div>';
+// ── IPO ───────────────────────────────────────────────────────────────────
+let ipoData = null, ipoErr = null;
+async function loadIPOs(){
+  spin('ipo', true);
+  try {
+    const r = await fetch('/api/ipos', {cache:'no-store'});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    ipoData = await r.json(); ipoErr = null;
+    stamp('ipo', ipoData.source ? `${ipoData.source} · ${fmtTime(new Date())}` : '');
+  } catch (err){ ipoErr = err; }
+  spin('ipo', false);
+  renderIPO();
+}
+function liveMatch(w){
+  if (!ipoData) return null;
+  const names = [w.name, ...(w.aliases || [])].map(n => n.toLowerCase());
+  return ipoData.ipos.find(i => names.some(n => i.name.toLowerCase().includes(n))) || null;
+}
+const fmtValue = v => v == null ? '—' : v >= 1e9 ? `$${(v/1e9).toFixed(1)}B` : `$${Math.round(v/1e6)}M`;
+function renderIPO(){
+  let html = '';
+  if (ipoData && ipoData.ipos.length){
+    const todayKey = ymd(new Date());
+    const upcoming = ipoData.ipos.filter(i => i.status !== 'filed' && (i.date || '') >= todayKey).slice(0, 12);
+    const recent = ipoData.ipos.filter(i => i.status === 'priced' && i.date && i.date < todayKey).slice(-6).reverse();
+    const filed = ipoData.ipos.filter(i => i.status === 'filed').length;
+    const table = (rows, label) => rows.length ? `<div class="section-label">${label}</div>
+      <table class="ipo-table"><thead><tr><th>DATE</th><th>COMPANY</th><th>PRICE</th><th>SIZE</th></tr></thead><tbody>
+      ${rows.map(i => `<tr>
+        <td class="m">${i.date ? fmtMD(parseYMD(i.date)) : 'TBA'}</td>
+        <td>${esc(i.name)} ${i.symbol ? `<span class="ipo-sym">${esc(i.symbol)}</span>` : ''}<div class="ipo-sector">${esc(i.exchange)}</div></td>
+        <td class="m">${i.price ? '$' + esc(String(i.price).replace(/^\$/,'')) : '—'}</td>
+        <td class="m">${fmtValue(i.value)}</td></tr>`).join('')}
+      </tbody></table>` : '';
+    html += table(upcoming, '🗓 UPCOMING LISTINGS') + table(recent, '✅ RECENTLY PRICED');
+    if (!upcoming.length && !recent.length) html += '<div class="empty">No IPOs scheduled in the next few weeks.</div>';
+    if (filed) html += `<div class="note">${filed} more companies have filed paperwork but haven't set a date yet.</div>`;
   } else {
-    let html='';
-    top.forEach(item=>{
-      html+=`<div class="news-item">
-        <a href="${item.link}" target="_blank" class="news-title">${item.title}</a>
-        <div class="news-summary">${item.summary}</div>
-        <div class="news-source">— ${item.source}</div>
-      </div>`;
-    });
-    body.innerHTML=html;
+    html += ipoErr ? apiErrorHtml(ipoErr, 'IPO calendar') : ipoData ? `<div class="note">Live IPO calendar unavailable right now${ipoData.errors?.length ? ' (' + esc(ipoData.errors.join('; ')) + ')' : ''}. Adding a free FINNHUB_API_KEY makes this more reliable — see README.</div>` : '<div class="empty">Loading IPO calendar…</div>';
   }
 
-  btn.disabled=false;
-  btn.textContent='↻ Refresh';
-}
-
-// ── IPO TABLE ─────────────────────────────────────────────────────────────
-function renderIPO(){
-  let html=`<div class="ipo-legend">`;
-  Object.entries(VERDICT_STYLE).forEach(([v,s])=>{
-    html+=`<div style="display:flex;align-items:center;gap:5px">
-      <div class="ipo-dot" style="background:${s.color}"></div>
-      <span class="ipo-leg-label">${v}</span>
-    </div>`;
-  });
-  html+=`<span class="ipo-hint">· Tap row for my take</span></div>`;
-
-  IPOS.forEach((ipo,i)=>{
-    const vs=VERDICT_STYLE[ipo.verdict];
-    html+=`<div class="ipo-row" onclick="toggleIPO(${i})">
+  html += `<div class="section-label" style="margin-top:8px">⭐ MY WATCHLIST · NOTES FROM FEB 2026</div><div class="ipo-legend">`;
+  Object.entries(VERDICT_STYLE).forEach(([v,s]) => html += `<div style="display:flex;align-items:center;gap:5px"><div class="ipo-dot" style="background:${s.color}"></div><span class="ipo-leg-label">${v}</span></div>`);
+  html += `<span class="stamp">· Tap a row for my take</span></div>`;
+  IPO_WATCHLIST.forEach((w,i) => {
+    const vs = VERDICT_STYLE[w.verdict], live = liveMatch(w);
+    html += `<div class="ipo-row" onclick="toggleIPO(${i})">
       <div class="ipo-top">
-        <div class="ipo-verdict" style="background:${vs.bg};color:${vs.color};border:1px solid ${vs.border}">${ipo.verdict}</div>
+        <div class="ipo-verdict" style="background:${vs.bg};color:${vs.color};border:1px solid ${vs.border}">${w.verdict}</div>
         <div class="ipo-info">
-          <div class="ipo-name-row">
-            <span class="ipo-name">${ipo.name}</span>
-            <span class="ipo-window">${ipo.window}</span>
-          </div>
-          <div class="ipo-sub-row">
-            <span class="ipo-sector">${ipo.sector}</span>
-            <span class="ipo-val">${ipo.val}</span>
-          </div>
+          <div class="ipo-name-row"><span class="ipo-name">${esc(w.name)}</span><span class="ipo-window">${esc(w.window)}</span></div>
+          <div class="ipo-sub-row"><span class="ipo-sector">${esc(w.sector)}</span><span class="ipo-val">${esc(w.val)}</span></div>
+          ${live ? `<div class="ipo-live">🔔 On the live calendar: ${esc(live.status)}${live.date ? ' · ' + fmtMD(parseYMD(live.date)) : ''}${live.symbol ? ' · ' + esc(live.symbol) : ''}</div>` : ''}
         </div>
         <span class="ipo-arrow" id="ipo-arrow-${i}">▼</span>
       </div>
-      <div class="ipo-take" id="ipo-take-${i}" style="display:none;border-left:2px solid ${vs.color}">💬 ${ipo.take}</div>
+      <div class="ipo-take" id="ipo-take-${i}" style="display:none;border-left:2px solid ${vs.color}">💬 ${esc(w.take)}</div>
     </div>`;
   });
-
-  html+=`<div class="ipo-disclaimer">
-    ⚠️ <strong style="color:#f59e0b">Disclaimer:</strong> Not financial advice. IPO timing and valuations shift. Always consult a financial advisor before investing.
-  </div>`;
-
-  document.getElementById('ipo-body').innerHTML=html;
+  html += `<div class="ipo-disclaimer">⚠️ <strong style="color:#f59e0b">Disclaimer:</strong> Not financial advice. IPO timing and valuations shift. Always consult a financial advisor before investing.</div>`;
+  $('ipo-body').innerHTML = html;
 }
-
 function toggleIPO(i){
-  const take=document.getElementById('ipo-take-'+i);
-  const arrow=document.getElementById('ipo-arrow-'+i);
-  const open=take.style.display==='block';
-  take.style.display=open?'none':'block';
-  arrow.textContent=open?'▼':'▲';
+  const take = $('ipo-take-'+i), arrow = $('ipo-arrow-'+i);
+  const open = take.style.display === 'block';
+  take.style.display = open ? 'none' : 'block';
+  arrow.textContent = open ? '▼' : '▲';
 }
 
-renderIPO();
-</script>
+// ── TODAY AT A GLANCE ─────────────────────────────────────────────────────
+function greeting(){
+  const h = new Date().getHours();
+  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+}
+function todaySummary(){
+  const now = new Date();
+  const evs = calStatus === 'ok' ? eventsOn(new Date()) : [];
+  const upcoming = evs.filter(e => !e.allDay && e.s > now);
+  return {evs, next: upcoming[0] || null, allDay: evs.filter(e => e.allDay)};
+}
+function renderGlance(){
+  $('glance-greet').innerHTML = `${greeting()}, <span>Chappie</span>. Here's ${new Date().toLocaleDateString('en-US',{weekday:'long'})} at a glance.`;
+  const t = todaySummary(), due = remindersDue(), dl = nextCommitteeDeadline();
+  const fu = followups().filter(f => !f.done);
+  const tile = (label, big, sub, warn) => `<div class="tile"><div class="tile-label">${label}</div><div class="tile-big">${big}</div><div class="tile-sub${warn?' warn':''}">${sub}</div></div>`;
+  const tiles = [
+    wx ? tile('WEATHER', `${wmoIcon(wx.code)} ${esc(wx.temp)}°`, `${esc(wx.desc)} · H ${esc(wx.hi)}° L ${esc(wx.lo)}°${wx.rain >= 40 ? ` · ☔ ${wx.rain}% rain` : ''}`)
+       : tile('WEATHER', '—', 'Loading…'),
+    calStatus === 'ok'
+      ? tile('TODAY', `${t.evs.length} ${t.evs.length === 1 ? 'event' : 'events'}`,
+          t.next ? `Next: ${fmtTime(t.next.s)} · ${esc(t.next.title)}` : t.allDay.length ? esc(t.allDay.map(e => e.title).join(' · ')) : 'Rest of the day is clear')
+      : tile('TODAY', '—', calStatus === 'unconfigured' ? 'Connect your calendar' : calStatus === 'loading' ? 'Loading…' : 'Calendar unavailable'),
+    tile('REMINDERS', `${due.today.length} due`, due.overdue.length ? `${due.overdue.length} overdue · ${esc(due.overdue[0].text)}` : due.today.length ? esc(due.today[0].text) : `${state.reminders.filter(r => !r.done).length} open in total`, due.overdue.length),
+    dl ? tile('NEXT COMMITTEE ITEM', relDays(daysUntil(dl.date)), `${dl.c.icon} ${esc(dl.c.name)} · ${esc(dl.title)}`, daysUntil(dl.date) < 0)
+       : tile('NEXT COMMITTEE ITEM', '—', 'None scheduled'),
+    tile('FOLLOW-UPS', `${fu.length} open`, fu.length ? esc(fu[0].text) : 'All caught up', fu.some(f => f.urgency === 'HIGH')),
+  ];
+  $('glance-tiles').innerHTML = tiles.join('');
+}
+const relDays = d => d < 0 ? `${-d}d late` : d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : `${d} days`;
 
+// ── MORNING BRIEFING (text-to-speech) ─────────────────────────────────────
+function briefingSentences(){
+  const now = new Date(), s = [];
+  s.push(`${greeting()}, Chappie. It's ${now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}, ${fmtTime(now)}.`);
+  if (wx) s.push(`In Alexandria it's ${wx.temp} degrees and ${wx.desc.toLowerCase()}, with a high of ${wx.hi} and a low of ${wx.lo}.${wx.rain >= 40 ? ` There's a ${wx.rain} percent chance of rain, so grab an umbrella.` : ''}`);
+
+  if (calStatus === 'ok'){
+    const {evs} = todaySummary();
+    const timed = evs.filter(e => !e.allDay && e.en > now), allDay = evs.filter(e => e.allDay);
+    if (!evs.length) s.push('Your calendar is clear today.');
+    else {
+      if (allDay.length) s.push(`Today: ${listJoin(allDay.map(e => spoken(e.title)))}.`);
+      if (timed.length) s.push(`You have ${timed.length} ${timed.length === 1 ? 'appointment' : 'appointments'} still ahead: ${listJoin(timed.slice(0, 6).map(e => `at ${fmtTime(e.s)}, ${spoken(e.title)}`))}.`);
+      else if (!allDay.length || evs.some(e => !e.allDay)) s.push('Your scheduled appointments for today are done.');
+    }
+    const tom = eventsOn(addDays(startOfDay(), 1));
+    if (tom.length) s.push(`Looking ahead to tomorrow: ${listJoin(tom.slice(0, 3).map(e => (e.allDay ? '' : `${fmtTime(e.s)}, `) + spoken(e.title)))}.`);
+  }
+
+  const due = remindersDue();
+  if (due.overdue.length) s.push(`Overdue reminders: ${listJoin(due.overdue.map(r => spoken(r.text)))}.`);
+  if (due.today.length) s.push(`Due today: ${listJoin(due.today.map(r => spoken(r.text)))}.`);
+
+  const soon = COMMITTEES.flatMap(c => committeeItems(c).filter(i => !i.done && daysUntil(i.date) <= 14).map(i => ({...i, c})))
+    .sort((a,b) => a.date.localeCompare(b.date));
+  if (soon.length) s.push(`Coming up for your committees in the next two weeks: ${listJoin(soon.slice(0, 5).map(i => `${i.c.name}, ${spoken(i.title)}, ${i.kind === 'cal' ? spokenWhen(daysUntil(i.date)) : spokenDays(daysUntil(i.date))}`))}.`);
+  else s.push('Nothing due for your committees in the next two weeks.');
+
+  const fu = followups().filter(f => !f.done && f.source === 'CALENDAR' && f.urgency === 'HIGH');
+  if (fu.length) s.push(`Don't forget: ${listJoin(fu.slice(0, 3).map(f => spoken(f.text)))}.`);
+
+  if (news.ai?.items?.length) s.push(`Top AI headline, from ${news.ai.items[0].source}: ${spoken(news.ai.items[0].title)}.`);
+  const trip = news.travel ? tripAdvisories(news.travel.advisories || []).filter(a => a.level >= 2) : [];
+  if (trip.length) s.push(`Travel note: ${listJoin(trip.map(a => `${a.country} is at level ${a.level}, ${a.label}`))}.`);
+
+  s.push("That's your briefing. Have a great day!");
+  return s;
+}
+const spoken = t => String(t).replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '').replace(/\s+/g, ' ').trim();
+const spokenWhen = d => d === 0 ? 'today' : d === 1 ? 'tomorrow' : `in ${d} days`;
+const spokenDays = d => d < 0 ? `${-d} ${-d === 1 ? 'day' : 'days'} overdue` : d === 0 ? 'due today' : d === 1 ? 'due tomorrow' : `due in ${d} days`;
+function listJoin(a){ return a.length <= 1 ? (a[0] || '') : a.slice(0, -1).join('; ') + '; and ' + a[a.length - 1]; }
+
+let speaking = false;
+function pickVoice(){
+  const voices = speechSynthesis.getVoices().filter(v => /^en[-_]US/i.test(v.lang));
+  return voices.find(v => /enhanced|premium/i.test(v.name)) || voices.find(v => /samantha|ava|allison/i.test(v.name)) || voices[0] || null;
+}
+function toggleBriefing(){
+  if (!('speechSynthesis' in window)){ alert('This browser cannot read aloud. Try Safari on your iPad.'); return; }
+  if (speaking){ stopBriefing(); return; }
+  const sentences = briefingSentences();
+  const box = $('transcript');
+  box.innerHTML = sentences.map((t,i) => `<span id="bs-${i}">${esc(t)}</span>`).join(' ');
+  box.classList.add('show');
+  speechSynthesis.cancel();
+  speaking = true;
+  $('brief-btn').classList.add('playing'); $('brief-label').textContent = 'Stop';
+  const voice = pickVoice();
+  // iPad Safari cuts off long utterances, so queue one sentence at a time.
+  sentences.forEach((t, i) => {
+    const u = new SpeechSynthesisUtterance(t);
+    if (voice) u.voice = voice;
+    u.lang = 'en-US'; u.rate = 1.0;
+    u.onstart = () => { document.querySelectorAll('.transcript .now').forEach(n => n.classList.remove('now')); $('bs-'+i)?.classList.add('now'); };
+    if (i === sentences.length - 1) u.onend = stopBriefing;
+    u.onerror = e => { if (e.error !== 'interrupted' && e.error !== 'canceled') stopBriefing(); };
+    speechSynthesis.speak(u);
+  });
+}
+function stopBriefing(){
+  speaking = false;
+  speechSynthesis.cancel();
+  $('brief-btn').classList.remove('playing'); $('brief-label').textContent = 'Morning briefing';
+  document.querySelectorAll('.transcript .now').forEach(n => n.classList.remove('now'));
+}
+
+// ── FOOTER + REFRESH LOOP ─────────────────────────────────────────────────
+function renderFooter(){
+  const sync = syncMode === 'cloud' ? '☁️ Reminders & deadlines synced to the cloud'
+    : syncMode === 'error' ? '⚠️ Cloud sync failed — saved on this device'
+    : '📱 Reminders & deadlines saved on this device';
+  $('footer-status').textContent = `${sync} · Built with Claude · ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}`;
+}
+function renderStateful(){ renderCommittees(); renderReminders(); renderFollowups(); renderGlance(); }
+function renderAll(){ renderCalendar(); renderStateful(); renderAI(); renderTravel(); renderIPO(); renderFooter(); }
+
+const stale = (key, min) => !lastLoaded[key] || Date.now() - lastLoaded[key] > min * 60e3;
+function refreshAll(force){
+  if (force || stale('cal', REFRESH_MIN.calendar)) loadCalendar();
+  if (force || stale('weather', REFRESH_MIN.weather)) loadWeather();
+  if (force || stale('ai', REFRESH_MIN.news)) loadNews('ai');
+  if (force || stale('travel', REFRESH_MIN.news)) loadNews('travel');
+  if (force || stale('ipo', REFRESH_MIN.ipo)) loadIPOs();
+  if (force) syncPull();
+}
+// Check every minute; also catch up immediately when the iPad wakes up.
+setInterval(() => { if (!document.hidden) refreshAll(false); }, 60e3);
+document.addEventListener('visibilitychange', () => { if (!document.hidden){ updateClock(); refreshAll(false); syncPull(); } });
+
+$('dl-cmte').innerHTML = COMMITTEES.map(c => `<option value="${c.id}">${c.icon} ${esc(c.name)}</option>`).join('');
+$('dl-cmte').value = lsGet('cc-last-cmte', COMMITTEES[0].id);
+renderAll();
+refreshAll(true);
+</script>
 </body>
 </html>
